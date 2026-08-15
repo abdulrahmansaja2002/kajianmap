@@ -30,7 +30,7 @@ function LocateMeButton({
       size="icon"
       variant="secondary"
       className={cn(
-        "absolute z-[400] h-11 w-11 rounded-full border border-border bg-card shadow-raised hover:bg-secondary",
+        "absolute z-400 h-11 w-11 rounded-full border border-border bg-card shadow-raised hover:bg-secondary",
         className
       )}
       aria-label="Temukan lokasi saya"
@@ -129,7 +129,7 @@ export default function PublicMapPage() {
             />
             {(geo.status === "denied" || geo.status === "error") &&
               !locateErrorDismissed && (
-                <div className="absolute bottom-20 right-6 z-[400] flex max-w-[220px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
+                <div className="absolute bottom-20 right-6 z-400 flex max-w-[220px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
                   <p className="flex-1">{geo.errorMessage}</p>
                   <button onClick={() => setLocateErrorDismissed(true)}>
                     <X className="h-3.5 w-3.5" />
@@ -165,7 +165,7 @@ export default function PublicMapPage() {
                 />
                 {(geo.status === "denied" || geo.status === "error") &&
                   !locateErrorDismissed && (
-                    <div className="absolute bottom-40 right-4 z-[400] flex max-w-[200px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
+                    <div className="absolute bottom-40 right-4 z-400 flex max-w-[200px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
                       <p className="flex-1">{geo.errorMessage}</p>
                       <button onClick={() => setLocateErrorDismissed(true)}>
                         <X className="h-3.5 w-3.5" />

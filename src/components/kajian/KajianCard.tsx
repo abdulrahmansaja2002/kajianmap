@@ -37,7 +37,7 @@ export function KajianCard({ kajian, compact, className }: KajianCardProps) {
     >
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden rounded-md bg-gradient-to-br",
+          "relative shrink-0 overflow-hidden rounded-md bg-linear-to-br",
           posterGradient(kajian.id),
           compact ? "h-14 w-14" : "h-16 w-16"
         )}

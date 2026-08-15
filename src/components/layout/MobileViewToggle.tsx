@@ -12,8 +12,8 @@ interface MobileViewToggleProps {
  *  full-screen map and the scrollable list, per the mobile-first spec. */
 export function MobileViewToggle({ view, onChange }: MobileViewToggleProps) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[400] flex justify-center md:hidden">
-      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-card/95 p-1 shadow-raised backdrop-blur">
+    <div className="pointer-events-none fixed inset-x-0 bottom-5 z-400 flex justify-center md:hidden">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-card/95 p-1 shadow-raised backdrop-blur-sm">
         <button
           onClick={() => onChange("map")}
           className={cn(

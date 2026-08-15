@@ -59,7 +59,7 @@ export function KajianFilterBar({ filterState }: KajianFilterBarProps) {
       </div>
 
       <Button
-        variant={activeFilterCount > 0 ? "default" : "outline"}
+        variant={activeFilterCount > 0 ? "default" : "outline-solid"}
         size="icon"
         className="relative shrink-0"
         onClick={() => setSheetOpen(true)}
