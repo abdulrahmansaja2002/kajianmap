@@ -14,6 +14,7 @@ import { getFilteredLocationsWithKajian } from "@/lib/kajian-utils";
 import { mockKajian, mockLocations } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import useMediaDevice from "@/hooks/useMediaDevice";
 
 function LocateMeButton({
   onClick,
@@ -92,29 +93,65 @@ export default function PublicMapPage() {
       ? `${totalKajian} kajian ditemukan di ${filteredLocations.length} lokasi`
       : null;
 
-  return (
-    <div className="flex h-full flex-col">
-      <Navbar />
+  const { isMobile } = useMediaDevice();
+
+  const DesktopView = () => (
+    /* ---------- Mobile: single column, map/list toggle ---------- */
+    <div className="h-full flex">
+      <aside className="flex w-[400px] shrink-0 flex-col border-r border-border bg-background">
+        <div className="space-y-2 border-b border-border p-4">
+          <KajianFilterBar filterState={filterState} />
+          {resultsSummary && (
+            <p className="text-xs text-muted-foreground">{resultsSummary}</p>
+          )}
+        </div>
+        <div className="scroll-slim flex-1 overflow-y-auto p-4">
+          <KajianList
+            locations={filteredLocations}
+            onSelectLocation={handleMarkerClick}
+          />
+        </div>
+      </aside>
+
+      <div className="relative flex-1">
+        <MapView
+          locations={filteredLocations}
+          selectedLocationId={selectedLocationId}
+          onMarkerClick={handleMarkerClick}
+          userPosition={geo.position}
+          flyToSignal={flyToSignal}
+        />
+        <LocateMeButton
+          onClick={handleLocateMe}
+          loading={geo.status === "loading"}
+          className="bottom-6 right-6"
+        />
+        {(geo.status === "denied" || geo.status === "error") &&
+          !locateErrorDismissed && (
+            <div className="absolute bottom-20 right-6 z-400 flex max-w-[220px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
+              <p className="flex-1">{geo.errorMessage}</p>
+              <button onClick={() => setLocateErrorDismissed(true)}>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+      </div>
+    </div>
+  )
+
+  const MobileView = () => (
+    /* ---------- Desktop: split sidebar + map ---------- */
+    <div className="flex h-full flex-col md:hidden">
+      <div className="space-y-2 border-b border-border bg-card p-3">
+        <KajianFilterBar filterState={filterState} />
+        {resultsSummary && (
+          <p className="px-0.5 text-xs text-muted-foreground">{resultsSummary}</p>
+        )}
+      </div>
 
       <div className="relative min-h-0 flex-1">
-        {/* ---------- Desktop: split sidebar + map ---------- */}
-        <div className="hidden h-full md:flex">
-          <aside className="flex w-[400px] shrink-0 flex-col border-r border-border bg-background">
-            <div className="space-y-2 border-b border-border p-4">
-              <KajianFilterBar filterState={filterState} />
-              {resultsSummary && (
-                <p className="text-xs text-muted-foreground">{resultsSummary}</p>
-              )}
-            </div>
-            <div className="scroll-slim flex-1 overflow-y-auto p-4">
-              <KajianList
-                locations={filteredLocations}
-                onSelectLocation={handleMarkerClick}
-              />
-            </div>
-          </aside>
-
-          <div className="relative flex-1">
+        {view === "map" ? (
+          <>
             <MapView
               locations={filteredLocations}
               selectedLocationId={selectedLocationId}
@@ -125,66 +162,42 @@ export default function PublicMapPage() {
             <LocateMeButton
               onClick={handleLocateMe}
               loading={geo.status === "loading"}
-              className="bottom-6 right-6"
+              className="bottom-24 right-4"
             />
             {(geo.status === "denied" || geo.status === "error") &&
               !locateErrorDismissed && (
-                <div className="absolute bottom-20 right-6 z-400 flex max-w-[220px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
+                <div className="absolute bottom-40 right-4 z-400 flex max-w-[200px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
                   <p className="flex-1">{geo.errorMessage}</p>
                   <button onClick={() => setLocateErrorDismissed(true)}>
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
+          </>
+        ) : (
+          <div className="scroll-slim h-full overflow-y-auto p-3 pb-24">
+            <KajianList
+              locations={filteredLocations}
+              onSelectLocation={handleMarkerClick}
+            />
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* ---------- Mobile: single column, map/list toggle ---------- */}
-        <div className="flex h-full flex-col md:hidden">
-          <div className="space-y-2 border-b border-border bg-card p-3">
-            <KajianFilterBar filterState={filterState} />
-            {resultsSummary && (
-              <p className="px-0.5 text-xs text-muted-foreground">{resultsSummary}</p>
-            )}
-          </div>
+      <MobileViewToggle view={view} onChange={setView} />
+    </div>
+  )
 
-          <div className="relative min-h-0 flex-1">
-            {view === "map" ? (
-              <>
-                <MapView
-                  locations={filteredLocations}
-                  selectedLocationId={selectedLocationId}
-                  onMarkerClick={handleMarkerClick}
-                  userPosition={geo.position}
-                  flyToSignal={flyToSignal}
-                />
-                <LocateMeButton
-                  onClick={handleLocateMe}
-                  loading={geo.status === "loading"}
-                  className="bottom-24 right-4"
-                />
-                {(geo.status === "denied" || geo.status === "error") &&
-                  !locateErrorDismissed && (
-                    <div className="absolute bottom-40 right-4 z-400 flex max-w-[200px] items-start gap-2 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow-raised">
-                      <p className="flex-1">{geo.errorMessage}</p>
-                      <button onClick={() => setLocateErrorDismissed(true)}>
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-              </>
-            ) : (
-              <div className="scroll-slim h-full overflow-y-auto p-3 pb-24">
-                <KajianList
-                  locations={filteredLocations}
-                  onSelectLocation={handleMarkerClick}
-                />
-              </div>
-            )}
-          </div>
+  return (
+    <div className="flex h-full flex-col">
+      <Navbar />
 
-          <MobileViewToggle view={view} onChange={setView} />
-        </div>
+      <div className="relative min-h-0 flex-1">
+        {isMobile ? (
+          <MobileView />
+        ) : (
+          <DesktopView />
+        )}
       </div>
 
       <KajianDetailDrawer
