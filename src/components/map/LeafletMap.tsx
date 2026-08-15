@@ -41,9 +41,8 @@ function MapController({
   useEffect(() => {
     if (userPosition && flyToSignal !== lastSignal.current) {
       lastSignal.current = flyToSignal;
-      const latlng = L.latLng(userPosition.lat, userPosition.lng);
-      console.log("flyTo", latlng);
       // TODO: Fix the flyTo issue
+      // const latlng = L.latLng(userPosition.lat, userPosition.lng);
       // map.flyTo(latlng, 15, { duration: 1.1 });
     }
   }, [userPosition, flyToSignal, map]);
