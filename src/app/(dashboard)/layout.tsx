@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-// 👇 PERBAIKAN 1: Tambahkan icon Menu dan X untuk tombol hamburger
+//  1: Tambahkan icon Menu dan X untuk tombol hamburger
 import { LandPlot, Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
@@ -17,7 +17,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 👇 PERBAIKAN 2: State untuk mengontrol buka/tutup menu di HP
+  //  2: State untuk mengontrol buka/tutup menu di HP
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -29,14 +29,14 @@ export default function DashboardLayout({
           </span>
           <span className="font-display text-base font-bold tracking-tight">
             Kajian<span className="text-primary-700">Map</span>{" "}
-            {/* 👇 PERBAIKAN 3: Sembunyikan teks "Dashboard" di HP agar tidak makan tempat */}
+            {/*  3: Sembunyikan teks "Dashboard" di HP agar tidak makan tempat */}
             <span className="hidden font-normal text-muted-foreground sm:inline-block">
               Dashboard
             </span>
           </span>
         </Link>
 
-        {/* 👇 PERBAIKAN 4: Navigasi Desktop (Sembunyikan di layar kecil dengan 'hidden md:flex') */}
+        {/*  4: Navigasi Desktop (Sembunyikan di layar kecil dengan 'hidden md:flex') */}
         <nav className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map((link) => (
             <Link
@@ -55,7 +55,7 @@ export default function DashboardLayout({
           </Link>
         </nav>
 
-        {/* 👇 PERBAIKAN 5: Tombol Hamburger Menu khusus untuk HP ('flex md:hidden') */}
+        {/*  5: Tombol Hamburger Menu khusus untuk HP ('flex md:hidden') */}
         <button
           className="flex md:hidden items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -64,7 +64,7 @@ export default function DashboardLayout({
         </button>
       </header>
 
-      {/* 👇 PERBAIKAN 6: Dropdown Menu yang muncul saat tombol hamburger ditekan */}
+      {/*  6: Dropdown Menu yang muncul saat tombol hamburger ditekan */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-b border-border bg-card px-4 py-3 shadow-sm animate-in slide-in-from-top-2">
           <nav className="flex flex-col gap-1">

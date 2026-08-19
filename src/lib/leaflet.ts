@@ -82,7 +82,7 @@ export function createKajianIcon({ hasToday, isSelected }: MarkerOptions): L.Div
 /** Pulsing blue dot for "you are here", distinct from the emerald kajian
  * markers so it never gets confused with an actual masjid pin. */
 export function createUserLocationIcon(): L.DivIcon {
-  // 👇 PERBAIKAN: Memperbesar ikon posisi pengguna dan efek radar di sekelilingnya
+  // Memperbesar ikon posisi pengguna dan efek radar di sekelilingnya
   const html = `
     <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
       <span style="position:absolute;width:48px;height:48px;border-radius:9999px;background:#2563EB;opacity:0.3;animation:user-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></span>
