@@ -3,13 +3,6 @@
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 import type { LocationWithKajian } from "@/types";
-
-/**
- * Leaflet reaches for `window` at import time, which breaks Next.js's
- * server render. Loading the real map component with `ssr: false` keeps
- * it strictly client-side while this wrapper renders a stable placeholder
- * during the very first paint.
- */
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
   ssr: false,
   loading: () => (
@@ -28,8 +21,63 @@ interface MapViewProps {
   onMarkerClick: (locationId: string) => void;
   userPosition: { lat: number; lng: number } | null;
   flyToSignal: number;
+  zoomInSignal?: number;
+  zoomOutSignal?: number;
+  compassSignal?: number;
+  onOpenDetail?: () => void;
+  isDrawingMode?: boolean;
+  polygonFilter?: [number, number][] | null;
+  onPolygonCreated?: (coords: [number, number][]) => void;
+  mapStyle?: "default" | "satellite" | "dark";
+  isRouteMode?: boolean;
+  
+  //  1. TAMBAHKAN DUA BARIS INI DI INTERFACE MAPVIEWPROPS 
+  onRouteCalculated?: (data: { distanceKm: string; timeMins: number }) => void;
+  onRouteCleared?: () => void;
 }
 
-export default function MapView(props: MapViewProps) {
-  return <LeafletMap {...props} />;
+export default function MapView({
+  locations,
+  selectedLocationId,
+  onMarkerClick,
+  userPosition,
+  flyToSignal,
+  zoomInSignal,
+  zoomOutSignal,
+  compassSignal,
+  onOpenDetail,
+  isDrawingMode,
+  polygonFilter,
+  onPolygonCreated,
+  mapStyle,
+  isRouteMode,
+  
+  //  2. TANGKAP PROPS-NYA DI PARAMETER MAPVIEW 
+  onRouteCalculated,
+  onRouteCleared
+}: MapViewProps) {
+  return (
+    <div className="h-full w-full">
+      <LeafletMap 
+        locations={locations}
+        selectedLocationId={selectedLocationId}
+        onMarkerClick={onMarkerClick}
+        userPosition={userPosition}
+        flyToSignal={flyToSignal}
+        zoomInSignal={zoomInSignal}
+        zoomOutSignal={zoomOutSignal}
+        compassSignal={compassSignal}
+        onOpenDetail={onOpenDetail}
+        isDrawingMode={isDrawingMode}
+        polygonFilter={polygonFilter}
+        onPolygonCreated={onPolygonCreated}
+        mapStyle={mapStyle}
+        isRouteMode={isRouteMode}
+        
+        //  3. TERUSKAN/OPER PROPS-NYA KE LEAFLETMAP 
+        onRouteCalculated={onRouteCalculated}
+        onRouteCleared={onRouteCleared}
+      />
+    </div>
+  );
 }

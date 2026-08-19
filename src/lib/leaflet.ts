@@ -18,7 +18,7 @@ export function patchLeafletDefaultIcon() {
 }
 
 /** Small mosque-dome + crescent glyph, drawn once and reused inline in
- *  every marker so the app doesn't depend on an external icon sprite. */
+ * every marker so the app doesn't depend on an external icon sprite. */
 const DOME_GLYPH = `
   <path d="M6 15.5c0-3.6 2.7-6.3 6-6.3s6 2.7 6 6.3" fill="currentColor" opacity="0.95"/>
   <rect x="4.5" y="15.3" width="15" height="2.1" rx="1.05" fill="currentColor"/>
@@ -32,9 +32,9 @@ interface MarkerOptions {
 }
 
 /** Builds the custom KajianMap pin: a rounded badge with a mosque-dome
- *  glyph. "Today" locations glow with a pulsing emerald ring; everything
- *  else sits in a quieter sage/slate tone so today's kajian visually pop
- *  out of the map first. */
+ * glyph. "Today" locations glow with a pulsing emerald ring; everything
+ * else sits in a quieter sage/slate tone so today's kajian visually pop
+ * out of the map first. */
 export function createKajianIcon({ hasToday, isSelected }: MarkerOptions): L.DivIcon {
   const size = isSelected ? 46 : 38;
   const badgeColor = hasToday ? "#0D6350" : "#71827A";
@@ -80,18 +80,20 @@ export function createKajianIcon({ hasToday, isSelected }: MarkerOptions): L.Div
 }
 
 /** Pulsing blue dot for "you are here", distinct from the emerald kajian
- *  markers so it never gets confused with an actual masjid pin. */
+ * markers so it never gets confused with an actual masjid pin. */
 export function createUserLocationIcon(): L.DivIcon {
+  // 👇 PERBAIKAN: Memperbesar ikon posisi pengguna dan efek radar di sekelilingnya
   const html = `
-    <div style="position:relative;width:20px;height:20px;">
-      <span style="position:absolute;inset:0;border-radius:9999px;background:#2563EB;opacity:0.35;animation:marker-pulse 2.2s ease-in-out infinite;"></span>
-      <span style="position:absolute;inset:5px;border-radius:9999px;background:#2563EB;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></span>
+    <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
+      <span style="position:absolute;width:48px;height:48px;border-radius:9999px;background:#2563EB;opacity:0.3;animation:user-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></span>
+      
+      <span style="position:relative;width:22px;height:22px;border-radius:9999px;background:#2563EB;border:3px solid #ffffff;box-shadow:0 2px 8px rgba(37,99,235,0.6);"></span>
     </div>
   `;
   return L.divIcon({
     html,
     className: "kajianmap-user-dot",
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    iconSize: [24, 24],
+    iconAnchor: [12, 12], // Titik tengah harus presisi di [12, 12] karena ukuran w/h adalah 24px
   });
 }
