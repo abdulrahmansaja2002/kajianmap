@@ -62,7 +62,8 @@ export default function SuperAdminOverviewPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+    //  1: Padding pembungkus disesuaikan untuk HP (p-4) dan Desktop (sm:p-6)
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Overview & Audit</h1>
         <p className="text-sm text-muted-foreground">
@@ -70,7 +71,8 @@ export default function SuperAdminOverviewPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/*  2: grid-cols-1 di HP (agar lega), sm:grid-cols-2 di Tablet, lg:grid-cols-4 di Desktop */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STAT_CARDS.map(({ key, label, icon: Icon }) => (
           <Card key={key}>
             <CardContent className="flex items-center gap-3 p-4">
@@ -86,14 +88,18 @@ export default function SuperAdminOverviewPage() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
+      {/*  3: overflow-hidden ditambahkan agar tabel tidak keluar batas Card */}
+      <Card className="overflow-hidden">
+        
+        {/*  4: flex-col di HP (atas-bawah), md:flex-row di Desktop (kiri-kanan) */}
+        <CardHeader className="flex flex-col items-start gap-4 space-y-0 md:flex-row md:items-center md:justify-between p-4 sm:p-6">
           <div>
             <CardTitle>Semua Jadwal Aktif</CardTitle>
-            <CardDescription>Diurutkan berdasarkan lokasi masjid.</CardDescription>
+            <CardDescription className="mt-1">Diurutkan berdasarkan lokasi masjid.</CardDescription>
           </div>
           <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-48">
+            {/*  5: SelectTrigger lebar penuh (w-full) di HP, lebar fix (w-48) di Desktop */}
+            <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="Semua lokasi" />
             </SelectTrigger>
             <SelectContent>
@@ -106,21 +112,24 @@ export default function SuperAdminOverviewPage() {
             </SelectContent>
           </Select>
         </CardHeader>
-        <CardContent>
-          <Table>
+        
+        {/*  6: Tambahkan overflow-x-auto agar tabel bisa di-scroll horizontal (digeser) di HP */}
+        <CardContent className="p-0 sm:p-6 sm:pt-0 overflow-x-auto">
+          {/*  7: Beri min-width (700px) pada Table agar kolom/teks tidak saling tergencet */}
+          <Table className="min-w-[700px] sm:min-w-full">
             <TableHeader>
               <TableRow>
-                <TableHead>Judul</TableHead>
+                <TableHead className="pl-4 sm:pl-2">Judul</TableHead>
                 <TableHead>Lokasi</TableHead>
                 <TableHead>Dikelola oleh</TableHead>
                 <TableHead>Jadwal</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="pr-4 sm:pr-2">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredKajian.map((k) => (
                 <TableRow key={k.id}>
-                  <TableCell className="max-w-[200px] truncate font-medium">
+                  <TableCell className="max-w-[200px] truncate font-medium pl-4 sm:pl-2">
                     {k.title}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -130,7 +139,7 @@ export default function SuperAdminOverviewPage() {
                     {adminName(k.createdBy)}
                   </TableCell>
                   <TableCell className="text-sm">{scheduleWithTimeLabel(k)}</TableCell>
-                  <TableCell>
+                  <TableCell className="pr-4 sm:pr-2">
                     {occursToday(k) ? (
                       <Badge variant="today">Hari ini</Badge>
                     ) : (
@@ -142,6 +151,7 @@ export default function SuperAdminOverviewPage() {
             </TableBody>
           </Table>
         </CardContent>
+
       </Card>
     </div>
   );

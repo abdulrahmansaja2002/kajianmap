@@ -10,13 +10,7 @@ interface GeolocationState {
   errorMessage: string | null;
 }
 
-/**
- * Wraps the browser Geolocation API so components can request the user's
- * position on demand (e.g. "auto-center peta ke lokasi user") without
- * blocking initial render — the map should always show something useful
- * even if permission is denied or the API is unavailable (SSR, older
- * browsers, etc).
- */
+
 export function useGeolocation() {
   const [state, setState] = useState<GeolocationState>({
     status: "idle",
@@ -56,7 +50,7 @@ export function useGeolocation() {
               : "Tidak dapat mengambil lokasi saat ini.",
         });
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 

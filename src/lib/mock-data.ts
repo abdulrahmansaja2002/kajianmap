@@ -47,7 +47,7 @@ export const mockLocations: Location[] = [
   },
   {
     id: "loc-4",
-    name: "Masjid Pusdai Jawa Barat",
+    name: "Masjid PUSDAI Jawa Barat",
     address: "Jl. Diponegoro No.63, Citarum, Bandung Wetan",
     city: "Bandung",
     province: "Jawa Barat",
@@ -70,7 +70,7 @@ export const mockLocations: Location[] = [
   },
   {
     id: "loc-6",
-    name: "Masjid Habiburrahman PT DI",
+    name: "Masjid Raya Habiburrahman PT DI",
     address: "Jl. Pajajaran No.154, Husein Sastranegara, Cicendo",
     city: "Bandung",
     province: "Jawa Barat",
