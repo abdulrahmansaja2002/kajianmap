@@ -1,4 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
 /**
  * Next.js's dev server hot-reloads modules on every file change, which — if
@@ -11,14 +13,29 @@ import { PrismaClient } from "@prisma/client";
  */
 declare global {
   // eslint-disable-next-line no-var
+  var __prismaPgPool__: pg.Pool | undefined;
+  // eslint-disable-next-line no-var
   var __prisma__: PrismaClient | undefined;
 }
 
-export const prisma =
-  globalThis.__prisma__ ??
-  new PrismaClient({
+function createPrismaClient() {
+  const pool =
+    globalThis.__prismaPgPool__ ??
+    new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+  if (process.env.NODE_ENV !== "production") {
+    globalThis.__prismaPgPool__ = pool;
+  }
+
+  const adapter = new PrismaPg(pool);
+
+  return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
+}
+
+export const prisma = globalThis.__prisma__ ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.__prisma__ = prisma;
