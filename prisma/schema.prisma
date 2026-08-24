@@ -1,0 +1,128 @@
+// KajianMap — Prisma schema (PostgreSQL)
+//
+// Field names, enum values, and required/optional-ness are deliberately
+// kept 1:1 with the frontend's canonical types in `src/types/index.ts` —
+// e.g. `Role`/`KajianFrequency`/`KajianDayOfWeek` use the same lowercase
+// values the frontend already works with, so API responses need zero
+// translation layer before the UI can consume them directly.
+//
+// Run `npx prisma db push` (prototyping) or `npx prisma migrate dev`
+// (tracked migrations) after setting DATABASE_URL in .env.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  super_admin
+  admin_masjid
+}
+
+enum KajianFrequency {
+  rutin
+  insidental
+}
+
+enum KajianDayOfWeek {
+  senin
+  selasa
+  rabu
+  kamis
+  jumat
+  sabtu
+  minggu
+}
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  /// Bcrypt hash — never store or return the plain password.
+  password String
+  name     String
+  role     Role   @default(admin_masjid)
+  avatarUrl String?
+
+  /// Matches frontend's `assignedLocationIds: string[]` — an admin_masjid
+  /// can be assigned to more than one masjid, so this is a real many-to-many
+  /// relation rather than a single nullable FK. Always empty for
+  /// super_admin, who implicitly manages every location.
+  assignedLocations Location[] @relation("LocationAdmins")
+
+  kajianCreated Kajian[] @relation("KajianCreatedBy")
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Location {
+  id      String @id @default(cuid())
+  name    String
+  address String
+  city    String
+  province String
+  /// Named `lat`/`lng` (not `latitude`/`longitude`) to match
+  /// `Location.lat`/`Location.lng` in the frontend types exactly.
+  lat     Float
+  lng     Float
+
+  imageUrl     String?
+  contactPhone String?
+
+  admins     User[]   @relation("LocationAdmins")
+  kajianList Kajian[] @relation("LocationKajian")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("locations")
+}
+
+model Kajian {
+  id       String @id @default(cuid())
+  title    String
+  ustadz   String
+  /// Free-text rather than a Prisma enum: several frontend category labels
+  /// contain characters ("Tafsir Al-Qur'an", "Akhlak & Tazkiyah") that
+  /// aren't legal Prisma enum identifiers. Validity is instead enforced by
+  /// `KAJIAN_CATEGORY_OPTIONS` (imported from `@/types`) at the service layer.
+  category String
+
+  frequency KajianFrequency
+  /// Required when frequency = rutin, e.g. "every Thursday".
+  dayOfWeek KajianDayOfWeek?
+  /// Required when frequency = insidental — the single occurrence's date.
+  date      DateTime?
+
+  /// 24h "HH:mm", validated at the service layer rather than DB level.
+  startTime String
+  endTime   String
+
+  description   String
+  posterUrl     String?
+  contactPerson String
+  contactPhone  String?
+
+  isActive Boolean @default(true)
+
+  locationId String
+  location   Location @relation("LocationKajian", fields: [locationId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("KajianCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([locationId])
+  @@index([date])
+  @@index([category])
+  @@map("kajian")
+}
