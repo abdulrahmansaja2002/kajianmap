@@ -221,6 +221,7 @@ function RoutingHandler({
         routingControlRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, isRouteMode, userPosition, targetLocation]);
 
   return null;

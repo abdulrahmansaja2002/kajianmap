@@ -271,7 +271,10 @@ export default function PublicMapPage() {
     : filteredLocations.length > 0
     ? `${totalKajian} kajian ditemukan di ${filteredLocations.length} lokasi`
     : "Tidak ada kajian yang cocok dengan filter.";
-  useEffect(() => { geo.requestLocation(); }, [geo.requestLocation]);
+  useEffect(() => {
+    geo.requestLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => { if (geo.status === "granted" && geo.position) setFlyToSignal((s) => s + 1); }, [geo.status, geo.position]);
 
   function handleLocateMe() {
