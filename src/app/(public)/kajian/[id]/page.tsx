@@ -14,9 +14,9 @@ interface KajianDetailPageProps {
   params: { id: string };
 }
 
-export function generateStaticParams() {
-  return mockKajian.map((k) => ({ id: k.id }));
-}
+// export function generateStaticParams() {
+//   return mockKajian.map((k) => ({ id: k.id }));
+// }
 
 export default function KajianDetailPage({ params }: KajianDetailPageProps) {
   const { data, isLoading, isError } = useKajianDetailQuery(params.id);
