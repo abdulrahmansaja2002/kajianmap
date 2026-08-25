@@ -17,12 +17,13 @@ import { KajianList } from "@/components/kajian/KajianList";
 import { KajianDetailDrawer } from "@/components/kajian/KajianDetailDrawer";
 import { useKajianFilter } from "@/hooks/useKajianFilter";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { getFilteredLocationsWithKajian } from "@/lib/kajian-utils";
+import { getFilteredLocationsWithKajian, groupKajianRecordsByLocation } from "@/lib/kajian-utils";
 import { mockKajian, mockLocations } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NearbyScannerAlert } from "@/components/kajian/NearbyScannerAlert";
 import { useNearbyKajian } from "@/hooks/useNearbyKajian";
+import { useKajianListQuery } from "@/hooks/queries/useKajian";
 
 
 // Algoritma menarik sebuah garis lurus imajiner dari titik tersebut ke satu arah tak terhingga, lalu menghitung berapa kali garis itu memotong garis batas area.
@@ -242,8 +243,16 @@ export default function PublicMapPage() {
   const geo = useGeolocation();
   const [showScanner, setShowScanner] = useState(false);
   const isAnyOtherFeatureActive = isListOpen || isDrawingMode || isLayerMenuOpen || showScanner || isRouteMode;
+  
+  // Only `isActive` is filtered server-side here — date mode, ustadz,
+  // category, and free-text search stay client-side in
+  // `groupKajianRecordsByLocation` so typing in the search box doesn't
+  // trigger a network round trip on every keystroke.
+  const kajianQuery = useKajianListQuery({ isActive: true });
+
   const filteredLocations = useMemo(() => {
-    let baseLocations = getFilteredLocationsWithKajian(mockLocations, mockKajian, filterState.filters);
+    // let baseLocations = getFilteredLocationsWithKajian(mockLocations, mockKajian, filterState.filters);
+    let baseLocations = groupKajianRecordsByLocation(kajianQuery.data ?? [], filterState.filters);
     if (polygonFilter && polygonFilter.length > 2) {
       baseLocations = baseLocations.filter(loc => 
         isPointInPolygon([loc.lat, loc.lng], polygonFilter)
@@ -255,10 +264,13 @@ export default function PublicMapPage() {
   const { status: scannerStatus, nearbyLocations, startScan, resetScanner } = useNearbyKajian(filteredLocations);
   const totalKajian = filteredLocations.reduce((sum, l) => sum + l.kajianList.length, 0);
   const selectedLocation = filteredLocations.find((l) => l.id === selectedLocationId) ?? null;
-  const resultsSummary = filteredLocations.length > 0
+  const resultsSummary = kajianQuery.isLoading
+    ? "Memuat jadwal kajian…"
+    : kajianQuery.isError
+    ? "Gagal memuat data. Periksa koneksi lalu coba lagi."
+    : filteredLocations.length > 0
     ? `${totalKajian} kajian ditemukan di ${filteredLocations.length} lokasi`
-    : null;
-
+    : "Tidak ada kajian yang cocok dengan filter.";
   useEffect(() => { geo.requestLocation(); }, []);
   useEffect(() => { if (geo.status === "granted" && geo.position) setFlyToSignal((s) => s + 1); }, [geo.status, geo.position]);
 

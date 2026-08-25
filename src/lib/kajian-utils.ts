@@ -107,3 +107,52 @@ export function distanceKm(
     Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
   return R * 2 * Math.asin(Math.sqrt(h));
 }
+
+/**
+ * Same job as `getFilteredLocationsWithKajian`, but for data that arrived
+ * from the API rather than the mock arrays — `GET /api/kajian` returns a
+ * flat list of kajian each with their own `location` embedded (see
+ * `lib/api-mappers.ts`), not a separate `Location[]` to join against. This
+ * groups that flat list back into the same `LocationWithKajian[]` shape
+ * every list/map component already expects, applying the identical filter
+ * and sort rules.
+ */
+export function groupKajianRecordsByLocation(
+  records: { kajian: Kajian; location: Location }[],
+  filters: KajianFilters,
+  today: Date = new Date()
+): LocationWithKajian[] {
+  const query = filters.query?.trim().toLowerCase();
+  const byLocation = new Map<string, { location: Location; kajianList: Kajian[] }>();
+
+  for (const { kajian, location } of records) {
+    if (!matchesKajianFilters(kajian, filters, today)) continue;
+
+    if (query) {
+      const locationMatches = location.name.toLowerCase().includes(query);
+      const titleMatches = kajian.title.toLowerCase().includes(query);
+      if (!locationMatches && !titleMatches) continue;
+    }
+
+    const entry = byLocation.get(location.id) ?? { location, kajianList: [] };
+    entry.kajianList.push(kajian);
+    byLocation.set(location.id, entry);
+  }
+
+  return Array.from(byLocation.values()).map(({ location, kajianList }) => {
+    const sorted = [...kajianList].sort(
+      (a, b) => daysUntilNextOccurrence(a, today) - daysUntilNextOccurrence(b, today)
+    );
+    const hasToday = sorted.some((k) => occursToday(k, today));
+    const next = sorted[0];
+
+    const result: LocationWithKajian = {
+      ...location,
+      kajianList: sorted,
+      hasToday,
+      nextOccurrenceLabel: next ? scheduleWithTimeLabel(next) : null,
+    };
+    return result;
+  });
+}
+
