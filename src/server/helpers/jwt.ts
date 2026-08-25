@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import type { Role } from "@prisma/client";
+import type { Role } from "../../../generated/prisma/client";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const EXPIRES_IN = "7d";

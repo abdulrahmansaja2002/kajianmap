@@ -1,5 +1,5 @@
 import { prisma } from "@/server/db/client";
-import type { Kajian, Prisma } from "@prisma/client";
+import type { Kajian, Prisma } from "../../../generated/prisma/client";
 
 export interface KajianListFilter {
   locationId?: string;

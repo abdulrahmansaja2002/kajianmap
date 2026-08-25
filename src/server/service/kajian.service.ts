@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Kajian } from "@prisma/client";
+import type { Kajian } from "../../../generated/prisma/client";
 import { KajianRepo } from "@/server/repo/kajian.repo";
 import { ForbiddenError, NotFoundError } from "@/server/helpers/errors";
 import type { AuthContext } from "@/server/middlewares/auth.middleware";

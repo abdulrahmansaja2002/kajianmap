@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import type { Role } from "@prisma/client";
+import type { Role } from "../../../generated/prisma/client";
 import { verifyJwt } from "@/server/helpers/jwt";
 import { ForbiddenError, UnauthorizedError } from "@/server/helpers/errors";
 
