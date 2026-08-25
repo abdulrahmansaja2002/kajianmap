@@ -259,7 +259,7 @@ export default function PublicMapPage() {
       );
     }
     return baseLocations;
-  }, [filterState.filters, polygonFilter]);
+  }, [kajianQuery.data, filterState.filters, polygonFilter]);
 
   const { status: scannerStatus, nearbyLocations, startScan, resetScanner } = useNearbyKajian(filteredLocations);
   const totalKajian = filteredLocations.reduce((sum, l) => sum + l.kajianList.length, 0);
