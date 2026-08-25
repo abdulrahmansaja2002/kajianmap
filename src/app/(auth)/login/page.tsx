@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LandPlot, Loader2 } from "lucide-react";
+import { useLoginMutation } from "@/hooks/queries/useAuthMutations";
+import { ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,19 +22,14 @@ import {
 
 const loginSchema = z.object({
   email: z.string().email("Masukkan email yang valid"),
-  password: z.string().min(6, "Kata sandi minimal 6 karakter"),
+  password: z.string().min(1, "Kata sandi wajib diisi"),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-/**
- * MVP mock authentication: routes by email pattern instead of a real
- * session lookup. Swap for a real auth provider before launch.
- */
 export default function LoginPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const loginMutation = useLoginMutation();
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -41,19 +37,20 @@ export default function LoginPage() {
   });
 
   async function onSubmit(values: LoginValues) {
-    setFormError(null);
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 500));
-
-    if (values.email.includes("superadmin")) {
-      router.push("/super-admin/locations");
-    } else if (values.email.includes("admin")) {
-      router.push("/admin/jadwal");
-    } else {
-      setFormError("Akun tidak ditemukan. Gunakan salah satu akun contoh di bawah.");
-      setIsSubmitting(false);
+    try {
+      const { user } = await loginMutation.mutateAsync(values);
+      router.push(user.role === "super_admin" ? "/super-admin" : "/admin/jadwal");
+    } catch {
+      // Error is already captured in loginMutation.error and rendered below.
     }
   }
+
+  const errorMessage =
+    loginMutation.error instanceof ApiError
+      ? loginMutation.error.message
+      : loginMutation.error
+      ? "Terjadi kesalahan. Coba lagi."
+      : null;
 
   return (
     <div className="flex h-full items-center justify-center bg-secondary/40 p-4">
@@ -95,22 +92,23 @@ export default function LoginPage() {
                 )}
               />
 
-              {formError && (
-                <p className="text-xs font-medium text-destructive">{formError}</p>
+              {errorMessage && (
+                <p className="text-xs font-medium text-destructive">{errorMessage}</p>
               )}
 
-              <Button type="submit" disabled={isSubmitting} className="mt-1">
-                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={loginMutation.isPending} className="mt-1">
+                {loginMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 Masuk
               </Button>
             </form>
           </Form>
 
           <div className="mt-5 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
-            <p className="mb-1 font-medium text-foreground">Akun contoh (mock):</p>
+            <p className="mb-1 font-medium text-foreground">Akun demo (setelah `npm run db:seed`):</p>
             <p>admin.masjidraya@kajianmap.id — Admin Masjid</p>
+            <p>admin.dt@kajianmap.id — Admin Masjid (2 lokasi)</p>
             <p>superadmin@kajianmap.id — Super Admin</p>
-            <p className="mt-1">Kata sandi bebas, min. 6 karakter.</p>
+            <p className="mt-1">Kata sandi: password123</p>
           </div>
 
           <Link
