@@ -1,11 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useCreateKajianMutation,
+  useDeleteKajianMutation,
+  useMyKajianListQuery,
+  useUpdateKajianMutation,
+} from "@/hooks/queries/useKajian";
 import { KajianForm } from "@/components/admin/KajianForm";
-import { mockKajian, mockLocations, mockUsers } from "@/lib/mock-data";
 import type { Kajian } from "@/types";
 import type { KajianFormValues } from "@/lib/validations/kajian";
+import { ApiError } from "@/lib/api-client";
 import { scheduleWithTimeLabel } from "@/lib/date-helpers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,79 +41,81 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-/** MVP stand-in for a real auth session. In production this comes from
- *  the logged-in user's JWT/session, scoped server-side. */
-const CURRENT_ADMIN = mockUsers.find((u) => u.id === "admin-1")!;
-
 export default function AdminJadwalPage() {
-  const assignedLocations = useMemo(
-    () =>
-      mockLocations.filter((loc) =>
-        CURRENT_ADMIN.assignedLocationIds.includes(loc.id)
-      ),
-    []
-  );
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
 
-  const [kajianList, setKajianList] = useState<Kajian[]>(() =>
-    mockKajian.filter((k) => CURRENT_ADMIN.assignedLocationIds.includes(k.locationId))
-  );
+  // Route guard: TanStack Query has no opinion on auth, so this is plain
+  // client-side redirect logic sitting next to it, same as any other app.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/login");
+    } else if (user?.role === "super_admin") {
+      router.replace("/super-admin");
+    }
+  }, [isAuthenticated, user, router]);
+
+  const assignedLocations = useMemo(() => user?.assignedLocations ?? [], [user]);
+  const locationIds = useMemo(() => assignedLocations.map((l) => l.id), [assignedLocations]);
+
+  const { data: myKajian, isLoading, isError } = useMyKajianListQuery(locationIds);
+
+  const createMutation = useCreateKajianMutation();
+  const updateMutation = useUpdateKajianMutation();
+  const deleteMutation = useDeleteKajianMutation();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingKajian, setEditingKajian] = useState<Kajian | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   function openCreateDialog() {
     setEditingKajian(null);
+    setFormError(null);
     setDialogOpen(true);
   }
 
   function openEditDialog(kajian: Kajian) {
     setEditingKajian(kajian);
+    setFormError(null);
     setDialogOpen(true);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!confirm("Hapus jadwal kajian ini? Tindakan tidak dapat dibatalkan.")) return;
-    setKajianList((list) => list.filter((k) => k.id !== id));
-  }
-
-  function toggleActive(id: string) {
-    setKajianList((list) =>
-      list.map((k) => (k.id === id ? { ...k, isActive: !k.isActive } : k))
-    );
-  }
-
-  function handleSubmit(values: KajianFormValues) {
-    const now = new Date().toISOString();
-
-    if (editingKajian) {
-      setKajianList((list) =>
-        list.map((k) =>
-          k.id === editingKajian.id
-            ? {
-                ...k,
-                ...values,
-                category: values.category as Kajian["category"],
-                contactPhone: values.contactPhone || undefined,
-                posterUrl: values.posterUrl || undefined,
-                updatedAt: now,
-              }
-            : k
-        )
-      );
-    } else {
-      const newKajian: Kajian = {
-        id: `kj-${Date.now()}`,
-        ...values,
-        category: values.category as Kajian["category"],
-        contactPhone: values.contactPhone || undefined,
-        posterUrl: values.posterUrl || undefined,
-        createdAt: now,
-        updatedAt: now,
-        createdBy: CURRENT_ADMIN.id,
-      };
-      setKajianList((list) => [newKajian, ...list]);
+    try {
+      await deleteMutation.mutateAsync(id);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Gagal menghapus jadwal.");
     }
-    setDialogOpen(false);
+  }
+
+  async function toggleActive(kajian: Kajian) {
+    try {
+      await updateMutation.mutateAsync({
+        id: kajian.id,
+        values: { isActive: !kajian.isActive },
+      });
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Gagal memperbarui status.");
+    }
+  }
+
+  async function handleSubmit(values: KajianFormValues) {
+    setFormError(null);
+    try {
+      if (editingKajian) {
+        await updateMutation.mutateAsync({ id: editingKajian.id, values });
+      } else {
+        await createMutation.mutateAsync(values);
+      }
+      setDialogOpen(false);
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan jadwal.");
+    }
+  }
+
+  if (!isAuthenticated || user?.role === "super_admin") {
+    return null; // redirect effect above handles navigation
   }
 
   return (
@@ -118,7 +128,7 @@ export default function AdminJadwalPage() {
             {assignedLocations.map((l) => l.name).join(", ") || "masjid Anda"}.
           </p>
         </div>
-        <Button onClick={openCreateDialog}>
+        <Button onClick={openCreateDialog} disabled={assignedLocations.length === 0}>
           <Plus className="h-4 w-4" />
           Tambah Jadwal
         </Button>
@@ -128,15 +138,32 @@ export default function AdminJadwalPage() {
         <CardHeader>
           <CardTitle>Daftar Jadwal</CardTitle>
           <CardDescription>
-            {kajianList.length} jadwal terdaftar di lokasi yang Anda kelola.
+            {isLoading
+              ? "Memuat…"
+              : `${myKajian.length} jadwal terdaftar di lokasi yang Anda kelola.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {kajianList.length === 0 ? (
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Memuat jadwal…</span>
+            </div>
+          )}
+
+          {isError && !isLoading && (
+            <p className="py-8 text-center text-sm text-destructive">
+              Gagal memuat jadwal. Periksa koneksi lalu muat ulang halaman.
+            </p>
+          )}
+
+          {!isLoading && !isError && myKajian.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Belum ada jadwal kajian. Klik &ldquo;Tambah Jadwal&rdquo; untuk membuat yang pertama.
             </p>
-          ) : (
+          )}
+
+          {!isLoading && myKajian.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -148,26 +175,26 @@ export default function AdminJadwalPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {kajianList.map((k) => (
-                  <TableRow key={k.id}>
+                {myKajian.map(({ kajian }) => (
+                  <TableRow key={kajian.id}>
                     <TableCell className="max-w-[220px]">
-                      <p className="truncate font-medium">{k.title}</p>
+                      <p className="truncate font-medium">{kajian.title}</p>
                       <Badge variant="sage" className="mt-1">
-                        {k.category}
+                        {kajian.category}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {k.ustadz}
+                      {kajian.ustadz}
                     </TableCell>
-                    <TableCell className="text-sm">{scheduleWithTimeLabel(k)}</TableCell>
+                    <TableCell className="text-sm">{scheduleWithTimeLabel(kajian)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch
-                          checked={k.isActive}
-                          onCheckedChange={() => toggleActive(k.id)}
+                          checked={kajian.isActive}
+                          onCheckedChange={() => toggleActive(kajian)}
                         />
                         <span className="text-xs text-muted-foreground">
-                          {k.isActive ? "Aktif" : "Nonaktif"}
+                          {kajian.isActive ? "Aktif" : "Nonaktif"}
                         </span>
                       </div>
                     </TableCell>
@@ -176,7 +203,7 @@ export default function AdminJadwalPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => openEditDialog(k)}
+                          onClick={() => openEditDialog(kajian)}
                           aria-label="Edit jadwal"
                         >
                           <Pencil className="h-4 w-4" />
@@ -184,7 +211,7 @@ export default function AdminJadwalPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => handleDelete(k.id)}
+                          onClick={() => handleDelete(kajian.id)}
                           aria-label="Hapus jadwal"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -209,9 +236,14 @@ export default function AdminJadwalPage() {
               Jadwal akan langsung tampil di peta publik setelah disimpan.
             </DialogDescription>
           </DialogHeader>
+          {formError && (
+            <p className="text-sm font-medium text-destructive">{formError}</p>
+          )}
           <KajianForm
             locations={assignedLocations}
-            lockedLocationId={assignedLocations[0]?.id}
+            lockedLocationId={
+              assignedLocations.length === 1 ? assignedLocations[0].id : undefined
+            }
             defaultValues={
               editingKajian
                 ? {
@@ -222,6 +254,7 @@ export default function AdminJadwalPage() {
                 : undefined
             }
             submitLabel={editingKajian ? "Simpan Perubahan" : "Tambah Jadwal"}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
             onSubmit={handleSubmit}
             onCancel={() => setDialogOpen(false)}
           />

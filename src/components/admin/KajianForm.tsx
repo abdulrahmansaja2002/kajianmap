@@ -9,7 +9,7 @@ import {
   kajianFormSchema,
   type KajianFormValues,
 } from "@/lib/validations/kajian";
-import { DAY_OF_WEEK_OPTIONS, KAJIAN_CATEGORY_OPTIONS, type Location } from "@/types";
+import { DAY_OF_WEEK_OPTIONS, KAJIAN_CATEGORY_OPTIONS } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,8 +34,10 @@ import {
 
 interface KajianFormProps {
   /** Locations the current admin is allowed to assign this kajian to. A
-   *  super_admin sees every masjid; an admin_masjid only sees theirs. */
-  locations: Location[];
+   *  super_admin sees every masjid; an admin_masjid only sees theirs. Only
+   *  `id`/`name` are needed to render the select, so this stays decoupled
+   *  from the full `Location` type. */
+  locations: { id: string; name: string }[];
   /** Pre-fills the form for editing; omit for "tambah baru". */
   defaultValues?: Partial<KajianFormValues>;
   /** Locks the location select to a single masjid — used when an
