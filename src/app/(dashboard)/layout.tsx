@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-//  1: Tambahkan icon Menu dan X untuk tombol hamburger
 import { LandPlot, Menu, X, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,7 +27,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Every /admin/* and /super-admin/* page shares this layout, so guarding
   // here once covers all of them instead of repeating the check per page.
   useEffect(() => {
@@ -46,8 +46,6 @@ export default function DashboardLayout({
   }
 
   const navLinks = user.role === "super_admin" ? SUPER_ADMIN_LINKS : ADMIN_LINKS;
-  //  2: State untuk mengontrol buka/tutup menu di HP
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto scroll-slim">
@@ -58,14 +56,12 @@ export default function DashboardLayout({
           </span>
           <span className="font-display text-base font-bold tracking-tight">
             Kajian<span className="text-primary-700">Map</span>{" "}
-            {/*  3: Sembunyikan teks "Dashboard" di HP agar tidak makan tempat */}
             <span className="hidden font-normal text-muted-foreground sm:inline-block">
               Dashboard
             </span>
           </span>
         </Link>
 
-        {/*  4: Navigasi Desktop (Sembunyikan di layar kecil dengan 'hidden md:flex') */}
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
@@ -88,7 +84,6 @@ export default function DashboardLayout({
           </Button>
         </nav>
 
-        {/*  5: Tombol Hamburger Menu khusus untuk HP ('flex md:hidden') */}
         <button
           className="flex md:hidden items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -97,7 +92,6 @@ export default function DashboardLayout({
         </button>
       </header>
 
-      {/*  6: Dropdown Menu yang muncul saat tombol hamburger ditekan */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-b border-border bg-card px-4 py-3 shadow-sm animate-in slide-in-from-top-2">
           <nav className="flex flex-col gap-1">
