@@ -1,7 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client";
 import bcrypt from "bcryptjs";
+import pg from "pg";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(
+    new pg.Pool({ connectionString: process.env.DATABASE_URL })
+  )
+});
 
 /** Same demo password for every seeded account — change immediately in
  *  any environment beyond local development. */
