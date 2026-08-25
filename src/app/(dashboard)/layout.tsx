@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 //  1: Tambahkan icon Menu dan X untuk tombol hamburger
-import { LandPlot, Menu, X } from "lucide-react";
+import { LandPlot, Menu, X, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const NAV_LINKS = [
   { href: "/admin/jadwal", label: "Jadwal Saya" },
+  { href: "/super-admin", label: "Overview" },
+  { href: "/super-admin/locations", label: "Lokasi Masjid" },
+  { href: "/super-admin/users", label: "Admin Masjid" },
+];
+
+const ADMIN_LINKS = [{ href: "/admin/jadwal", label: "Jadwal Saya" }];
+const SUPER_ADMIN_LINKS = [
   { href: "/super-admin", label: "Overview" },
   { href: "/super-admin/locations", label: "Lokasi Masjid" },
   { href: "/super-admin/users", label: "Admin Masjid" },
@@ -17,6 +27,25 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth();
+  // Every /admin/* and /super-admin/* page shares this layout, so guarding
+  // here once covers all of them instead of repeating the check per page.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, router]);
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  }
+
+  if (!isAuthenticated || !user) {
+    return null; // redirecting
+  }
+
+  const navLinks = user.role === "super_admin" ? SUPER_ADMIN_LINKS : ADMIN_LINKS;
   //  2: State untuk mengontrol buka/tutup menu di HP
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -38,7 +67,7 @@ export default function DashboardLayout({
 
         {/*  4: Navigasi Desktop (Sembunyikan di layar kecil dengan 'hidden md:flex') */}
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -53,6 +82,10 @@ export default function DashboardLayout({
           >
             Lihat Peta
           </Link>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="ml-1">
+            <LogOut className="h-3.5 w-3.5" />
+            Keluar
+          </Button>
         </nav>
 
         {/*  5: Tombol Hamburger Menu khusus untuk HP ('flex md:hidden') */}
@@ -68,7 +101,7 @@ export default function DashboardLayout({
       {isMobileMenuOpen && (
         <div className="md:hidden border-b border-border bg-card px-4 py-3 shadow-sm animate-in slide-in-from-top-2">
           <nav className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -85,6 +118,10 @@ export default function DashboardLayout({
             >
               Lihat Peta
             </Link>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="ml-1">
+              <LogOut className="h-3.5 w-3.5" />
+              Keluar
+            </Button>
           </nav>
         </div>
       )}
