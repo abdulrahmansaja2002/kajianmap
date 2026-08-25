@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, ExternalLink, Loader2, MapPin, Phone, User } from "lucide-react";
