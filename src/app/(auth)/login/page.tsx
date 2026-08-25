@@ -5,7 +5,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LandPlot, Loader2 } from "lucide-react";
+import { LandPlot, Loader2, Eye, EyeOff } from "lucide-react";
 import { useLoginMutation } from "@/hooks/queries/useAuthMutations";
 import { ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { useState } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Masukkan email yang valid"),
@@ -30,6 +31,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const loginMutation = useLoginMutation();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -85,7 +87,16 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Kata Sandi</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <div className="relative">
+                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
