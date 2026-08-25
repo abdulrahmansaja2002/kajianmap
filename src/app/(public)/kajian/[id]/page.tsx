@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock, ExternalLink, MapPin, Phone, User } from "lucide-react";
+import { ArrowLeft, Clock, ExternalLink, Loader2, MapPin, Phone, User } from "lucide-react";
 import { mockKajian, mockLocations } from "@/lib/mock-data";
 import { occursToday, scheduleWithTimeLabel } from "@/lib/date-helpers";
 import { Badge } from "@/components/ui/badge";
