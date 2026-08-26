@@ -25,3 +25,10 @@ export class NotFoundError extends Error {
     this.name = "NotFoundError";
   }
 }
+
+export class ConflictError extends Error {
+  constructor(message = "Data sudah ada.") {
+    super(message);
+    this.name = "ConflictError";
+  }
+}

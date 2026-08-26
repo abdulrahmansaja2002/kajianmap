@@ -3,7 +3,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { userFormSchema, type UserFormValues } from "@/lib/validations/user";
+import {
+  createUserFormSchema,
+  updateUserFormSchema,
+  type UserFormValues,
+} from "@/lib/validations/user";
 import type { Location } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +26,8 @@ import {
 interface UserFormProps {
   locations: Location[];
   defaultValues?: Partial<UserFormValues>;
+  /** When true, password is optional (leave blank to keep the current hash). */
+  isEdit?: boolean;
   submitLabel?: string;
   isSubmitting?: boolean;
   onSubmit: (values: UserFormValues) => void | Promise<void>;
@@ -35,9 +41,10 @@ export function UserForm({
   isSubmitting = false,
   onSubmit,
   onCancel,
+  isEdit = false,
 }: UserFormProps) {
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(isEdit ? updateUserFormSchema : createUserFormSchema),
     defaultValues: {
       name: "",
       email: "",

@@ -1,4 +1,12 @@
-import type { Kajian, KajianCategory, KajianDayOfWeek, KajianFrequency, Location } from "@/types";
+import type {
+  Kajian,
+  KajianCategory,
+  KajianDayOfWeek,
+  KajianFrequency,
+  Location,
+  User,
+  UserRole,
+} from "@/types";
 
 /**
  * Shape actually returned by GET /api/kajian and /api/kajian/:id — a
@@ -57,6 +65,32 @@ export function mapApiLocation(raw: ApiLocationRecord): Location {
     lng: raw.lng,
     imageUrl: raw.imageUrl ?? undefined,
     contactPhone: raw.contactPhone ?? undefined,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+}
+
+export interface ApiUserRecord {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  assignedLocations: { id: string; name: string }[];
+}
+
+export function mapApiUser(raw: ApiUserRecord): User {
+  return {
+    id: raw.id,
+    name: raw.name,
+    email: raw.email,
+    role: raw.role,
+    assignedLocationIds: raw.assignedLocations.map((l) => l.id),
+    avatarUrl: raw.avatarUrl ?? undefined,
+    isActive: raw.isActive,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
