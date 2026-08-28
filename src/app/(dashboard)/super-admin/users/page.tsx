@@ -28,7 +28,7 @@ import { useCreateUserMutation, useDeleteUserMutation, useUpdateUserMutation, us
 import { useLocationListQuery } from "@/hooks/queries/useLocation";
 
 export default function SuperAdminUsersPage() {
-  const { data: users, isLoading: isLoadingUsers } = useUserListQuery({ role: "admin_masjid" });
+  const { data: users, isFetching: isLoadingUsers } = useUserListQuery({ role: "admin_masjid" });
   const { mutate: createUser } = useCreateUserMutation();
   const { mutate: updateUser } = useUpdateUserMutation();
   const { mutate: deleteUser } = useDeleteUserMutation();

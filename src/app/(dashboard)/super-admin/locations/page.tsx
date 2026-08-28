@@ -28,7 +28,7 @@ import { useCreateLocationMutation, useDeleteLocationMutation, useLocationListQu
 export default function SuperAdminLocationsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
-  const { data: locations, isLoading: isLoadingLocations } = useLocationListQuery();
+  const { data: locations, isFetching: isLoadingLocations } = useLocationListQuery();
   const { mutate: createLocation } = useCreateLocationMutation();
   const { mutate: updateLocation } = useUpdateLocationMutation();
   const { mutate: deleteLocation } = useDeleteLocationMutation();
