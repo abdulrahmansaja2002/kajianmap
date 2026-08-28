@@ -77,7 +77,7 @@ export default function SuperAdminLocationsPage() {
             <CardDescription>Memuat data...</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-center items-center h-full">
+            <div className="flex justify-center items-center h-full gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               <p className="text-sm text-muted-foreground">Memuat data...</p>
             </div>
