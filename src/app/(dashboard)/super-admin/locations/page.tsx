@@ -87,7 +87,7 @@ export default function SuperAdminLocationsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Semua Lokasi</CardTitle>
-            <CardDescription>{locations.length} masjid terdaftar.</CardDescription>
+            <CardDescription>{locations?.length} masjid terdaftar.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
