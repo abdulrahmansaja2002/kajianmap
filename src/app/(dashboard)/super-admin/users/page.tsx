@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { mockLocations, mockUsers as initialUsers } from "@/lib/mock-data";
 import type { User } from "@/types";
 import type { UserFormValues } from "@/lib/validations/user";
 import { UserForm } from "@/components/admin/UserForm";
@@ -33,10 +32,6 @@ export default function SuperAdminUsersPage() {
   const { mutate: updateUser } = useUpdateUserMutation();
   const { mutate: deleteUser } = useDeleteUserMutation();
   const { data: locations, isLoading: isLoadingLocations } = useLocationListQuery();
-
-  // const [users, setUsers] = useState<User[]>(
-  //   initialUsers.filter((u) => u.role === "admin_masjid")
-  // );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
 
