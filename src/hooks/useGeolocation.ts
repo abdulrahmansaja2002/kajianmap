@@ -50,7 +50,7 @@ export function useGeolocation() {
               : "Tidak dapat mengambil lokasi saat ini.",
         });
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
   }, []);
 
