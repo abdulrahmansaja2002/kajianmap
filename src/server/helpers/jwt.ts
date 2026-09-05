@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import type { Role } from "../../../generated/prisma/client";
+import crypto from 'node:crypto'
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const EXPIRES_IN = "7d";
@@ -39,4 +40,12 @@ export function verifyJwt(token: string): JwtPayload | null {
   } catch {
     return null;
   }
+}
+
+export function generateRefreshToken(): string {
+  return crypto.randomBytes(64).toString("hex");
+}
+
+export function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
