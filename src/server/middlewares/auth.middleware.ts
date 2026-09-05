@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Role } from "../../../generated/prisma/client";
 import { verifyJwt } from "@/server/helpers/jwt";
 import { ForbiddenError, UnauthorizedError } from "@/server/helpers/errors";
+import { AUTH_COOKIE_NAME } from "@/server/helpers/cookie";
 
 export interface AuthContext {
   userId: string;
@@ -15,16 +16,19 @@ export interface AuthContext {
  * Reads the `Authorization: Bearer <token>` header and verifies it.
  * Returns null instead of throwing so callers can choose whether the route
  * is public (ignore null) or protected (see `requireAuth` below).
- *
+ * 
+ * UPDATE: This now also checks the cookie for a token.
  * NOTE: this only *verifies* a token issued elsewhere — the actual
  * `POST /api/auth/login` route that signs one isn't part of this pass; wire
  * it up via `signJwt` from `helpers/jwt.ts` once `auth.service.ts` exists.
  */
 export function getAuthContext(req: NextRequest): AuthContext | null {
-  const header = req.headers.get("authorization");
-  if (!header?.startsWith("Bearer ")) return null;
+  const cookieToken = req.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const headerToken = req.headers.get("authorization")?.startsWith("Bearer ")
+    ? req.headers.get("authorization")!.slice("Bearer ".length).trim()
+    : undefined;
 
-  const token = header.slice("Bearer ".length).trim();
+  const token = cookieToken || headerToken;
   if (!token) return null;
 
   const payload = verifyJwt(token);
