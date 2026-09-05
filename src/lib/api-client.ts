@@ -43,7 +43,7 @@ interface ApiFetchOptions extends Omit<RequestInit, "body"> {
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { body, token, headers, ...rest } = options;
 
-  const res = await fetch(path, {
+  const performRequest = async () => await fetch(path, {
     ...rest,
     credentials: "same-origin",
     headers: {
@@ -53,6 +53,15 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  let res = await performRequest();
+
+  if (res.status === 401 && path !== "/api/auth/refresh") {
+    const refreshRes = await fetch("/api/auth/refresh", { method: "POST", credentials: "same-origin" });
+    if (refreshRes.ok) {
+      res = await performRequest(); // retry once
+    }
+  }
 
   // A 204 or a body-less error page won't parse as JSON — fall back to
   // null rather than letting `.json()` throw and mask the real status.
