@@ -3,6 +3,7 @@ import type { Role } from "../../../generated/prisma/client";
 import { verifyJwt } from "@/server/helpers/jwt";
 import { ForbiddenError, UnauthorizedError } from "@/server/helpers/errors";
 import { AUTH_COOKIE_NAME } from "@/server/helpers/cookie";
+import { cookies } from 'next/headers'
 
 export interface AuthContext {
   userId: string;
@@ -23,7 +24,9 @@ export interface AuthContext {
  * it up via `signJwt` from `helpers/jwt.ts` once `auth.service.ts` exists.
  */
 export function getAuthContext(req: NextRequest): AuthContext | null {
-  const cookieToken = req.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const cookieStore = cookies()
+  // const cookieToken = req.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const cookieToken = cookieStore.get(AUTH_COOKIE_NAME)?.value;
   const headerToken = req.headers.get("authorization")?.startsWith("Bearer ")
     ? req.headers.get("authorization")!.slice("Bearer ".length).trim()
     : undefined;
