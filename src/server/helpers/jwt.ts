@@ -3,7 +3,7 @@ import type { Role } from "../../../generated/prisma/client";
 import crypto from 'node:crypto'
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const EXPIRES_IN = "7d";
+const EXPIRES_IN = "1h";
 
 export interface JwtPayload {
   /** User id — kept as `sub` to match standard JWT claim naming. */
