@@ -71,6 +71,8 @@ model User {
 
   kajianCreated Kajian[] @relation("KajianCreatedBy")
 
+  tokens UserToken[]
+
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
