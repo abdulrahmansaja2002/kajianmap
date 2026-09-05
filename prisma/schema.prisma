@@ -52,6 +52,8 @@ model UserToken {
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime      @default(now())
+  
+  @@map("user_tokens")
 }
 
 model User {
