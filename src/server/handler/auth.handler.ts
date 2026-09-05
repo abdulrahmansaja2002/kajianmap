@@ -4,6 +4,8 @@ import { ApiResponse } from "@/server/helpers/api-response";
 import { AUTH_COOKIE_NAME, authCookieOptions, authRefreshCookieOptions, clearedAuthCookieOptions, REFRESH_COOKIE_NAME } from "@/server/helpers/cookie";
 import { requireAuth } from "@/server/middlewares/auth.middleware";
 import { UnauthorizedError } from "../helpers/errors";
+import { cookies } from 'next/headers'
+
 
 export const AuthHandler = {
   async login(req: NextRequest) {
@@ -45,8 +47,9 @@ export const AuthHandler = {
     }
   },
   
-  async logout(req: NextRequest) {
-    const rawToken = req.cookies.get(REFRESH_COOKIE_NAME)?.value;
+  async logout() {
+    const cookieStore = cookies()
+    const rawToken = cookieStore.get(REFRESH_COOKIE_NAME)?.value;
     await AuthService.logout(rawToken);
   
     const response = ApiResponse.success(null, "Berhasil keluar.");
