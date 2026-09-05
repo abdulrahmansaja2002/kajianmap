@@ -43,17 +43,18 @@ import {
 
 export default function AdminJadwalPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   // Route guard: TanStack Query has no opinion on auth, so this is plain
   // client-side redirect logic sitting next to it, same as any other app.
   useEffect(() => {
+    if (isAuthLoading) return
     if (!isAuthenticated) {
       router.replace("/login");
     } else if (user?.role === "super_admin") {
       router.replace("/super-admin");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthLoading, isAuthenticated, user, router]);
 
   const assignedLocations = useMemo(() => user?.assignedLocations ?? [], [user]);
   const locationIds = useMemo(() => assignedLocations.map((l) => l.id), [assignedLocations]);

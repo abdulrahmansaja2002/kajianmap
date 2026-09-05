@@ -21,24 +21,35 @@ export interface AuthUser {
 export interface AuthState {
   token: string | null;
   user: AuthUser | null;
+  isLoading?: boolean;
 }
 
 const STORAGE_KEY = "kajianmap.auth";
 const EMPTY_STATE: AuthState = { token: null, user: null };
 
+let state: AuthState = { token: null, user: null, isLoading: true }; // Start with loading
+
 function readInitialState(): AuthState {
-  if (typeof window === "undefined") return EMPTY_STATE;
+  if (typeof window === "undefined") {
+    return { ...EMPTY_STATE, isLoading: true };
+  }
+  
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY_STATE;
+    if (!raw) {
+      return { ...EMPTY_STATE, isLoading: false };
+    }
     const parsed = JSON.parse(raw) as AuthState;
-    return parsed.token && parsed.user ? parsed : EMPTY_STATE;
+    return { ...parsed, isLoading: false };
   } catch {
-    return EMPTY_STATE;
+    return { ...EMPTY_STATE, isLoading: false };
   }
 }
 
-let state: AuthState = readInitialState();
+// Initialize only on client
+if (typeof window !== "undefined") {
+  state = readInitialState();
+}
 const listeners = new Set<() => void>();
 
 function emit() {

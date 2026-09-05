@@ -19,14 +19,25 @@ interface LoginResponse {
  *  every other hook (e.g. `useCreateKajianMutation`) can read the token
  *  right away — no extra round trip or manual store wiring needed at the
  *  call site. */
-export function useLoginMutation() {
-  const { login } = useAuth();
+// This is no longer needed since we are using the cookie now
+// but, the old code is kept here for reference, use useAuth from useAuth.old.ts instead
+// export function useLoginMutation() {
+//   const { login } = useAuth();
 
+//   return useMutation({
+//     mutationFn: (input: LoginInput) =>
+//       apiFetch<LoginResponse>("/api/auth/login", { method: "POST", body: input }),
+//     onSuccess: (data) => {
+//       login(data.token, data.user);
+//     },
+//   });
+// }
+
+export function useLoginMutation() {
+  const { setUser } = useAuth();
   return useMutation({
     mutationFn: (input: LoginInput) =>
       apiFetch<LoginResponse>("/api/auth/login", { method: "POST", body: input }),
-    onSuccess: (data) => {
-      login(data.token, data.user);
-    },
+    onSuccess: (data) => setUser(data.user),
   });
 }

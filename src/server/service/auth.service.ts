@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { UserRepo } from "@/server/repo/user.repo";
+import { UserRecord, UserRepo } from "@/server/repo/user.repo";
 import { comparePassword } from "@/server/helpers/password";
 import { signJwt } from "@/server/helpers/jwt";
 import { UnauthorizedError } from "@/server/helpers/errors";
+import { AuthContext } from "../middlewares/auth.middleware";
 
 export const loginSchema = z.object({
   email: z.string().email("Masukkan email yang valid"),
@@ -55,5 +56,12 @@ export const AuthService = {
         assignedLocations: profile.assignedLocations,
       },
     };
+  },
+  async me(auth: AuthContext): Promise<UserRecord> {
+    const user = await UserRepo.findById(auth.userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError("Sesi tidak valid. Silakan masuk kembali.");
+    }
+    return user;
   },
 };

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "../../../generated/prisma/client";
 import { ZodError } from "zod";
-import { ForbiddenError, NotFoundError, UnauthorizedError } from "@/server/helpers/errors";
+import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError } from "@/server/helpers/errors";
 
 interface SuccessBody<T> {
   success: true;
@@ -58,6 +58,10 @@ export const ApiResponse = {
 
     if (err instanceof NotFoundError) {
       return ApiResponse.error(err.message, 404);
+    }
+
+    if (err instanceof ConflictError) {
+      return ApiResponse.error(err.message, 409);
     }
 
     if (err instanceof Prisma.PrismaClientKnownRequestError) {

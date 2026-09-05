@@ -311,6 +311,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: [],
     isActive: true,
     createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
   },
   {
     id: "admin-1",
@@ -320,6 +321,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: ["loc-1"],
     isActive: true,
     createdAt: "2026-01-06T00:00:00.000Z",
+    updatedAt: "2026-01-06T00:00:00.000Z",
   },
   {
     id: "admin-2",
@@ -329,6 +331,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: ["loc-2"],
     isActive: true,
     createdAt: "2026-01-16T00:00:00.000Z",
+    updatedAt: "2026-01-16T00:00:00.000Z",
   },
   {
     id: "admin-3",
@@ -338,6 +341,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: ["loc-3"],
     isActive: true,
     createdAt: "2026-02-04T00:00:00.000Z",
+    updatedAt: "2026-02-04T00:00:00.000Z",
   },
   {
     id: "admin-4",
@@ -347,6 +351,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: ["loc-4"],
     isActive: true,
     createdAt: "2026-02-02T00:00:00.000Z",
+    updatedAt: "2026-02-02T00:00:00.000Z",
   },
   {
     id: "admin-5",
@@ -356,6 +361,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: ["loc-5"],
     isActive: true,
     createdAt: "2026-01-26T00:00:00.000Z",
+    updatedAt: "2026-01-26T00:00:00.000Z",
   },
   {
     id: "admin-6",
@@ -365,6 +371,7 @@ export const mockUsers: User[] = [
     assignedLocationIds: ["loc-6"],
     isActive: true,
     createdAt: "2026-03-02T00:00:00.000Z",
+    updatedAt: "2026-03-02T00:00:00.000Z",
   },
 ];
 

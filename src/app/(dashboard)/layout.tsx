@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { LandPlot, Menu, X, LogOut } from "lucide-react";
+import { LandPlot, Menu, X, LogOut, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -27,18 +27,27 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();  
+  const { user, isAuthenticated, logout, isLoading } = useAuth();  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Every /admin/* and /super-admin/* page shares this layout, so guarding
   // here once covers all of them instead of repeating the check per page.
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isLoading) {
       router.replace("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, isLoading]);
   const handleLogout = () => {
     logout();
     router.push("/login");
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full w-full gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <p className="text-sm text-muted-foreground">Memuat halaman...</p>
+      </div>
+    )
   }
 
   if (!isAuthenticated || !user) {

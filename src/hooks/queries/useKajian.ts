@@ -3,7 +3,6 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { mapApiKajian, mapApiLocation, type ApiKajianRecord } from "@/lib/api-mappers";
-import { useAuth } from "@/hooks/useAuth";
 import type { Kajian, Location } from "@/types";
 import type { KajianFormValues } from "@/lib/validations/kajian";
 
@@ -96,12 +95,11 @@ export function useMyKajianListQuery(locationIds: string[]) {
 /** Protected — requires `useAuth().token`; throws `ApiError` (401/403) if
  *  missing or the caller isn't allowed to manage the target location. */
 export function useCreateKajianMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (values: KajianFormValues) =>
-      apiFetch<ApiKajianRecord>("/api/kajian", { method: "POST", body: values, token }),
+      apiFetch<ApiKajianRecord>("/api/kajian", { method: "POST", body: values }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kajianKeys.lists() });
     },
@@ -109,12 +107,11 @@ export function useCreateKajianMutation() {
 }
 
 export function useUpdateKajianMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, values }: { id: string; values: Partial<KajianFormValues> }) =>
-      apiFetch<ApiKajianRecord>(`/api/kajian/${id}`, { method: "PUT", body: values, token }),
+      apiFetch<ApiKajianRecord>(`/api/kajian/${id}`, { method: "PUT", body: values }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: kajianKeys.lists() });
       queryClient.invalidateQueries({ queryKey: kajianKeys.detail(variables.id) });
@@ -123,11 +120,10 @@ export function useUpdateKajianMutation() {
 }
 
 export function useDeleteKajianMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiFetch<null>(`/api/kajian/${id}`, { method: "DELETE", token }),
+    mutationFn: (id: string) => apiFetch<null>(`/api/kajian/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: kajianKeys.lists() });
     },
