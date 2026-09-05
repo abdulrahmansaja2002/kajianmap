@@ -114,13 +114,13 @@ export default function LoginPage() {
             </form>
           </Form>
 
-          <div className="mt-5 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
+          {/* <div className="mt-5 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
             <p className="mb-1 font-medium text-foreground">Akun demo (setelah `npm run db:seed`):</p>
             <p>admin.masjidraya@kajianmap.id — Admin Masjid</p>
             <p>admin.dt@kajianmap.id — Admin Masjid (2 lokasi)</p>
             <p>superadmin@kajianmap.id — Super Admin</p>
             <p className="mt-1">Kata sandi: password123</p>
-          </div>
+          </div> */}
 
           <Link
             href="/"

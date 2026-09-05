@@ -38,6 +38,24 @@ enum KajianDayOfWeek {
   minggu
 }
 
+enum UserTokenType {
+  auth_refresh
+  reset_password
+}
+
+model UserToken {
+  id        String        @id @default(cuid())
+  tokenHash String        @unique   // store a hash, never the raw token
+  type      UserTokenType @default(auth_refresh)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime      @default(now())
+  
+  @@map("user_tokens")
+}
+
 model User {
   id       String @id @default(cuid())
   email    String @unique
@@ -54,6 +72,8 @@ model User {
   assignedLocations Location[] @relation("LocationAdmins")
 
   kajianCreated Kajian[] @relation("KajianCreatedBy")
+
+  tokens UserToken[]
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

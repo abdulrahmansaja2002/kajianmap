@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { UserRecord, UserRepo } from "@/server/repo/user.repo";
+import { AuthRepo } from "@/server/repo/auth.repo";
 import { comparePassword } from "@/server/helpers/password";
-import { signJwt } from "@/server/helpers/jwt";
+import { generateRefreshToken, hashToken, signJwt } from "@/server/helpers/jwt";
 import { UnauthorizedError } from "@/server/helpers/errors";
 import { AuthContext } from "../middlewares/auth.middleware";
 
@@ -12,8 +13,22 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+async function issueRefreshToken(userId: string) {
+  const rawToken = generateRefreshToken();
+  await AuthRepo.createToken({
+    tokenHash: hashToken(rawToken),
+    userId,
+    type: "auth_refresh",
+    expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+  });
+  return rawToken;
+}
+
 export interface LoginResult {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
     id: string;
     name: string;
@@ -44,10 +59,12 @@ export const AuthService = {
     }
 
     const locationIds = profile.assignedLocations.map((l) => l.id);
-    const token = signJwt({ sub: profile.id, role: profile.role, locationIds });
+    const accessToken = signJwt({ sub: profile.id, role: profile.role, locationIds });
+    const refreshToken = await issueRefreshToken(profile.id);
 
     return {
-      token,
+      accessToken,
+      refreshToken,
       user: {
         id: profile.id,
         name: profile.name,
@@ -63,5 +80,34 @@ export const AuthService = {
       throw new UnauthorizedError("Sesi tidak valid. Silakan masuk kembali.");
     }
     return user;
+  },
+  async refresh(rawToken: string) {
+    const tokenHash = hashToken(rawToken);
+    const record = await AuthRepo.findValid(tokenHash, "auth_refresh");
+    if (!record) {
+      throw new UnauthorizedError("Sesi berakhir, silakan login kembali.");
+    }
+
+    // Rotate: revoke the used token, issue a fresh one. If a revoked
+    // token's hash is ever presented again, that's a reuse signal —
+    // consider revoking the whole family for this user at that point.
+    await AuthRepo.revoke(record.id);
+
+    const user = await UserRepo.findById(record.userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError("Sesi tidak valid. Silakan masuk kembali.");
+    }
+
+    const locationIds = user.assignedLocations.map((l) => l.id);
+    const accessToken = signJwt({ sub: user.id, role: user.role, locationIds });
+    const refreshToken = await issueRefreshToken(user.id);
+
+    return { accessToken, refreshToken };
+  },
+
+  async logout(rawToken?: string) {
+    if (rawToken) {
+      await AuthRepo.revokeByHash(hashToken(rawToken));
+    }
   },
 };
