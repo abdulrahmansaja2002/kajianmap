@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { mapApiLocation, type ApiLocationRecord } from "@/lib/api-mappers";
-import { useAuth } from "@/hooks/useAuth";
 import type { Location } from "@/types";
 import type { LocationFormValues } from "@/lib/validations/location";
 
@@ -60,12 +59,11 @@ export function useLocationDetailQuery(id: string | undefined) {
 
 /** Protected — requires `useAuth().token`; super_admin only. */
 export function useCreateLocationMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (values: LocationFormValues) =>
-      apiFetch<ApiLocationRecord>("/api/location", { method: "POST", body: values, token }),
+      apiFetch<ApiLocationRecord>("/api/location", { method: "POST", body: values }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: locationKeys.lists() });
     },
@@ -73,12 +71,11 @@ export function useCreateLocationMutation() {
 }
 
 export function useUpdateLocationMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, values }: { id: string; values: Partial<LocationFormValues> }) =>
-      apiFetch<ApiLocationRecord>(`/api/location/${id}`, { method: "PUT", body: values, token }),
+      apiFetch<ApiLocationRecord>(`/api/location/${id}`, { method: "PUT", body: values }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: locationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: locationKeys.detail(variables.id) });
@@ -87,11 +84,10 @@ export function useUpdateLocationMutation() {
 }
 
 export function useDeleteLocationMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiFetch<null>(`/api/location/${id}`, { method: "DELETE", token }),
+    mutationFn: (id: string) => apiFetch<null>(`/api/location/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: locationKeys.lists() });
     },

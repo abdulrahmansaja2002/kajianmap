@@ -34,44 +34,43 @@ function toQueryString(params: UserListParams): string {
   return qs ? `?${qs}` : "";
 }
 
-async function fetchUserList(params: UserListParams, token: string | null): Promise<User[]> {
-  const records = await apiFetch<ApiUserRecord[]>(`/api/user${toQueryString(params)}`, { token });
+async function fetchUserList(params: UserListParams): Promise<User[]> {
+  const records = await apiFetch<ApiUserRecord[]>(`/api/user${toQueryString(params)}`);
   return records.map(mapApiUser);
 }
 
 /** Protected — super_admin only. Powers the manajemen admin table. */
 export function useUserListQuery(params: UserListParams = {}) {
-  const { token } = useAuth();
-
+  const { isAuthenticated } = useAuth()
+  
   return useQuery({
     queryKey: userKeys.list(params),
-    queryFn: () => fetchUserList(params, token),
-    enabled: !!token,
+    queryFn: () => fetchUserList(params),
+    enabled: isAuthenticated,
   });
 }
 
 /** Protected — super_admin only. */
 export function useUserDetailQuery(id: string | undefined) {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth()
 
   return useQuery({
     queryKey: userKeys.detail(id ?? ""),
     queryFn: async (): Promise<User> => {
-      const record = await apiFetch<ApiUserRecord>(`/api/user/${id}`, { token });
+      const record = await apiFetch<ApiUserRecord>(`/api/user/${id}`);
       return mapApiUser(record);
     },
-    enabled: !!id && !!token,
+    enabled: !!id && isAuthenticated,
   });
 }
 
 /** Protected — requires `useAuth().token`; super_admin only. */
 export function useCreateUserMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (values: UserFormValues) =>
-      apiFetch<ApiUserRecord>("/api/user", { method: "POST", body: values, token }),
+      apiFetch<ApiUserRecord>("/api/user", { method: "POST", body: values }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: locationKeys.lists() });
@@ -80,12 +79,11 @@ export function useCreateUserMutation() {
 }
 
 export function useUpdateUserMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, values }: { id: string; values: Partial<UserFormValues> }) =>
-      apiFetch<ApiUserRecord>(`/api/user/${id}`, { method: "PUT", body: values, token }),
+      apiFetch<ApiUserRecord>(`/api/user/${id}`, { method: "PUT", body: values }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) });
@@ -94,11 +92,10 @@ export function useUpdateUserMutation() {
 }
 
 export function useDeleteUserMutation() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiFetch<null>(`/api/user/${id}`, { method: "DELETE", token }),
+    mutationFn: (id: string) => apiFetch<null>(`/api/user/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     },
