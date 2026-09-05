@@ -34,6 +34,8 @@ interface MapViewProps {
   //  1. TAMBAHKAN DUA BARIS INI DI INTERFACE MAPVIEWPROPS 
   onRouteCalculated?: (data: { distanceKm: string; timeMins: number }) => void;
   onRouteCleared?: () => void;
+  isScannerActive?: boolean;
+  nearestLocationId?: string | null; // <-- 1. Tambahkan prop ini di interface
 }
 
 export default function MapView({
@@ -54,7 +56,9 @@ export default function MapView({
   
   //  2. TANGKAP PROPS-NYA DI PARAMETER MAPVIEW 
   onRouteCalculated,
-  onRouteCleared
+  onRouteCleared,
+  isScannerActive,
+  nearestLocationId // <-- 2. Tangkap prop ini
 }: MapViewProps) {
   return (
     <div className="h-full w-full">
@@ -77,6 +81,8 @@ export default function MapView({
         //  3. TERUSKAN/OPER PROPS-NYA KE LEAFLETMAP 
         onRouteCalculated={onRouteCalculated}
         onRouteCleared={onRouteCleared}
+        isScannerActive={isScannerActive}
+        nearestLocationId={nearestLocationId} // <-- 3. Teruskan ke LeafletMap
       />
     </div>
   );
