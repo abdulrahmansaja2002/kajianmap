@@ -13,12 +13,7 @@ export const locationFormSchema = z.object({
     .number({ invalid_type_error: "Longitude harus berupa angka" })
     .min(-180)
     .max(180),
-  imageUrl: z.string().url("URL gambar tidak valid").optional().or(z.literal("")),
-  contactPhone: z
-    .string()
-    .regex(/^[0-9+\-\s]*$/, "Nomor telepon hanya boleh angka, +, dan -")
-    .optional()
-    .or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
 });
 
 export type LocationFormValues = z.infer<typeof locationFormSchema>;

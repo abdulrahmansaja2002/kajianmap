@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 import type { LocationWithKajian } from "@/types";
+
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
   ssr: false,
   loading: () => (
@@ -30,10 +31,10 @@ interface MapViewProps {
   onPolygonCreated?: (coords: [number, number][]) => void;
   mapStyle?: "default" | "satellite" | "dark";
   isRouteMode?: boolean;
-  
-  //  1. TAMBAHKAN DUA BARIS INI DI INTERFACE MAPVIEWPROPS 
   onRouteCalculated?: (data: { distanceKm: string; timeMins: number }) => void;
   onRouteCleared?: () => void;
+  isScannerActive?: boolean;
+  nearestLocationId?: string | null; // <-- 1. Tambahkan prop ini di interface
 }
 
 export default function MapView({
@@ -51,10 +52,10 @@ export default function MapView({
   onPolygonCreated,
   mapStyle,
   isRouteMode,
-  
-  //  2. TANGKAP PROPS-NYA DI PARAMETER MAPVIEW 
   onRouteCalculated,
-  onRouteCleared
+  onRouteCleared,
+  isScannerActive,
+  nearestLocationId // <-- 2. Tangkap prop ini
 }: MapViewProps) {
   return (
     <div className="h-full w-full">
@@ -73,10 +74,10 @@ export default function MapView({
         onPolygonCreated={onPolygonCreated}
         mapStyle={mapStyle}
         isRouteMode={isRouteMode}
-        
-        //  3. TERUSKAN/OPER PROPS-NYA KE LEAFLETMAP 
         onRouteCalculated={onRouteCalculated}
         onRouteCleared={onRouteCleared}
+        isScannerActive={isScannerActive}
+        nearestLocationId={nearestLocationId} // <-- 3. Teruskan ke LeafletMap
       />
     </div>
   );

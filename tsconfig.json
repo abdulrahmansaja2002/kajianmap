@@ -16,8 +16,7 @@
     "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@prisma/client": ["./generated/prisma/client"]
+      "@/*": ["./src/*"]
     },
     //"ignoreDeprecations": "6.0"
   },

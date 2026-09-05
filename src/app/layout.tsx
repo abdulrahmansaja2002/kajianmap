@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { QueryProvider } from "@/components/providers/query-provider";
 
 export const metadata: Metadata = {
   title: "KajianMap — Temukan Kajian Islami di Sekitarmu",
@@ -23,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="h-dvh overflow-hidden bg-background text-foreground antialiased">
-        <QueryProvider>{children}</QueryProvider>
+        {children}
       </body>
     </html>
   );

@@ -23,7 +23,6 @@ export interface User {
   avatarUrl?: string;
   isActive: boolean;
   createdAt: string; // ISO date string
-  updatedAt: string;
 }
 
 /** Shape returned by the (mock) auth layer once a user is signed in. */

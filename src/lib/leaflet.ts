@@ -29,19 +29,24 @@ const DOME_GLYPH = `
 interface MarkerOptions {
   hasToday: boolean;
   isSelected?: boolean;
+  isNearby?: boolean;
 }
 
 /** Builds the custom KajianMap pin: a rounded badge with a mosque-dome
  * glyph. "Today" locations glow with a pulsing emerald ring; everything
  * else sits in a quieter sage/slate tone so today's kajian visually pop
  * out of the map first. */
-export function createKajianIcon({ hasToday, isSelected }: MarkerOptions): L.DivIcon {
+export function createKajianIcon({ hasToday, isSelected,isNearby=false }: MarkerOptions): L.DivIcon {
   const size = isSelected ? 46 : 38;
-  const badgeColor = hasToday ? "#0D6350" : "#71827A";
-  const ring = hasToday
-    ? `<span class="absolute inset-0 rounded-full" style="background:#15A57D;animation:marker-pulse 2.2s ease-in-out infinite;"></span>`
-    : "";
+  // Logika Warna: Jika terdeteksi 10km (isNearby), jadikan warna Emerald (#10B981)
+  let badgeColor = hasToday ? "#0D6350" : "#71827A";
+  if (isNearby) badgeColor = "#10B981"; 
 
+  // Logika Efek Radar: Aktif untuk Hari Ini ATAU Titik Terdekat 10km
+  const ring = (hasToday || isNearby)
+    ? `<span class="absolute inset-0 rounded-full" style="background:${isNearby ? '#34D399' : '#15A57D'};animation:marker-pulse 2.2s ease-in-out infinite;"></span>`
+    : "";
+  
   const html = `
     <div style="position:relative;width:${size}px;height:${size + 12}px;display:flex;align-items:flex-start;justify-content:center;">
       <div class="kajianmap-pin" style="position:relative;width:${size}px;height:${size}px;">

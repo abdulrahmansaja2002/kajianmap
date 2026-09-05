@@ -1,13 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LandPlot, Loader2, Eye, EyeOff } from "lucide-react";
-import { useLoginMutation } from "@/hooks/queries/useAuthMutations";
-import { ApiError } from "@/lib/api-client";
+import { LandPlot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,19 +18,22 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { useState } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Masukkan email yang valid"),
-  password: z.string().min(1, "Kata sandi wajib diisi"),
+  password: z.string().min(6, "Kata sandi minimal 6 karakter"),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
+/**
+ * MVP mock authentication: routes by email pattern instead of a real
+ * session lookup. Swap for a real auth provider before launch.
+ */
 export default function LoginPage() {
   const router = useRouter();
-  const loginMutation = useLoginMutation();
-  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -39,20 +41,19 @@ export default function LoginPage() {
   });
 
   async function onSubmit(values: LoginValues) {
-    try {
-      const { user } = await loginMutation.mutateAsync(values);
-      router.push(user.role === "super_admin" ? "/super-admin" : "/admin/jadwal");
-    } catch {
-      // Error is already captured in loginMutation.error and rendered below.
+    setFormError(null);
+    setIsSubmitting(true);
+    await new Promise((r) => setTimeout(r, 500));
+
+    if (values.email.includes("superadmin")) {
+      router.push("/super-admin/locations");
+    } else if (values.email.includes("admin")) {
+      router.push("/admin/jadwal");
+    } else {
+      setFormError("Akun tidak ditemukan. Gunakan salah satu akun contoh di bawah.");
+      setIsSubmitting(false);
     }
   }
-
-  const errorMessage =
-    loginMutation.error instanceof ApiError
-      ? loginMutation.error.message
-      : loginMutation.error
-      ? "Terjadi kesalahan. Coba lagi."
-      : null;
 
   return (
     <div className="flex h-full items-center justify-center bg-secondary/40 p-4">
@@ -87,40 +88,30 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Kata Sandi</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
+                      <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {errorMessage && (
-                <p className="text-xs font-medium text-destructive">{errorMessage}</p>
+              {formError && (
+                <p className="text-xs font-medium text-destructive">{formError}</p>
               )}
 
-              <Button type="submit" disabled={loginMutation.isPending} className="mt-1">
-                {loginMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting} className="mt-1">
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Masuk
               </Button>
             </form>
           </Form>
 
-          {/* <div className="mt-5 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
-            <p className="mb-1 font-medium text-foreground">Akun demo (setelah `npm run db:seed`):</p>
+          <div className="mt-5 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">
+            <p className="mb-1 font-medium text-foreground">Akun contoh (mock):</p>
             <p>admin.masjidraya@kajianmap.id — Admin Masjid</p>
-            <p>admin.dt@kajianmap.id — Admin Masjid (2 lokasi)</p>
             <p>superadmin@kajianmap.id — Super Admin</p>
-            <p className="mt-1">Kata sandi: password123</p>
-          </div> */}
+            <p className="mt-1">Kata sandi bebas, min. 6 karakter.</p>
+          </div>
 
           <Link
             href="/"

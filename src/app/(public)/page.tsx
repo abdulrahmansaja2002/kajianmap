@@ -17,14 +17,12 @@ import { KajianList } from "@/components/kajian/KajianList";
 import { KajianDetailDrawer } from "@/components/kajian/KajianDetailDrawer";
 import { useKajianFilter } from "@/hooks/useKajianFilter";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { getFilteredLocationsWithKajian, groupKajianRecordsByLocation } from "@/lib/kajian-utils";
+import { getFilteredLocationsWithKajian } from "@/lib/kajian-utils";
 import { mockKajian, mockLocations } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { NearbyScannerAlert } from "@/components/kajian/NearbyScannerAlert";
 import { useNearbyKajian } from "@/hooks/useNearbyKajian";
-import { useKajianListQuery } from "@/hooks/queries/useKajian";
-
 
 // Algoritma menarik sebuah garis lurus imajiner dari titik tersebut ke satu arah tak terhingga, lalu menghitung berapa kali garis itu memotong garis batas area.
 function isPointInPolygon(point: [number, number], polygon: [number, number][]) {
@@ -51,7 +49,8 @@ function MapToolbar({
   onToggleLayerMenu,
   isListOpen,
   isLayerMenuOpen,
-  isRouteMode
+  isRouteMode,
+  showScanner
 }: {
   onToggleList: () => void;
   onResetView: () => void;
@@ -64,6 +63,7 @@ function MapToolbar({
   isListOpen: boolean;
   isLayerMenuOpen: boolean;
   isRouteMode?: boolean;
+  showScanner: boolean;
 }) {
   return (
    <div className={cn(
@@ -73,11 +73,15 @@ function MapToolbar({
         : "left-1/2"
     )}>
       <Button 
-        size="icon" 
-        variant="ghost" 
-        className="h-9 w-9 md:h-10 md:w-10 rounded-full text-white hover:bg-white/20 transition-colors" 
+        size="icon" variant="ghost" disabled={isRouteMode}
+        className={cn(
+          "h-9 w-9 md:h-10 md:w-10 rounded-full transition-colors",
+          showScanner ? "bg-white/20 text-yellow-400" : "text-white hover:bg-white/20",
+          isRouteMode && "opacity-30 cursor-not-allowed pointer-events-none"
+        )} 
         onClick={onSearch}
-        title="KajianPintar">
+        title="SmartKajian"
+      >
         <Zap className="h-4 w-4 md:h-5 md:w-5" />
       </Button>
 
@@ -103,7 +107,8 @@ function MapToolbar({
         disabled={isRouteMode} 
         className={cn(
           "h-9 w-9 md:h-10 md:w-10 rounded-full transition-colors",
-          isDrawingMode ? "bg-white/20 text-yellow-400" : "text-white hover:bg-white/20"
+          isDrawingMode ? "bg-white/20 text-yellow-400" : "text-white hover:bg-white/20",
+          isRouteMode && "opacity-30 cursor-not-allowed pointer-events-none"
         )}
         onClick={onToggleDraw}
         title={isDrawingMode ? "Batal Mode Poligon" : "Mode Poligon"}
@@ -113,11 +118,12 @@ function MapToolbar({
 
       <Button 
         size="icon" 
-        variant="ghost"
+        variant="ghost" 
         disabled={!hasPolygon || isRouteMode}
         className={cn(
           "h-9 w-9 md:h-10 md:w-10 rounded-full transition-colors",
-          hasPolygon ? "text-red-400 hover:bg-red-400/20" : "text-white/50 opacity-50 cursor-not-allowed"
+          hasPolygon ? "text-red-400 hover:bg-red-400/20" : "text-white/50 opacity-50 cursor-not-allowed",
+          isRouteMode && "opacity-30 cursor-not-allowed pointer-events-none"
         )}
         onClick={onClearDraw}
         title="Hapus Area Poligon"
@@ -239,42 +245,38 @@ export default function PublicMapPage() {
   const [routeSummary, setRouteSummary] = useState<{ distanceKm: string; timeMins: number } | null>(null);
   const [mapStyle, setMapStyle] = useState<"default" | "satellite" | "dark">("default");
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
+  
+  // State tambahan untuk memisahkan Box Alert dan Mode Scanner di peta
+  const [showScanner, setShowScanner] = useState(false);
+  const [isScannerBoxOpen, setIsScannerBoxOpen] = useState(false);
+  
   const filterState = useKajianFilter();
   const geo = useGeolocation();
-  const [showScanner, setShowScanner] = useState(false);
+  
   const isAnyOtherFeatureActive = isListOpen || isDrawingMode || isLayerMenuOpen || showScanner || isRouteMode;
   
-  // Only `isActive` is filtered server-side here — date mode, ustadz,
-  // category, and free-text search stay client-side in
-  // `groupKajianRecordsByLocation` so typing in the search box doesn't
-  // trigger a network round trip on every keystroke.
-  const kajianQuery = useKajianListQuery({ isActive: true });
-
   const filteredLocations = useMemo(() => {
-    // let baseLocations = getFilteredLocationsWithKajian(mockLocations, mockKajian, filterState.filters);
-    let baseLocations = groupKajianRecordsByLocation(kajianQuery.data ?? [], filterState.filters);
+    let baseLocations = getFilteredLocationsWithKajian(mockLocations, mockKajian, filterState.filters);
     if (polygonFilter && polygonFilter.length > 2) {
       baseLocations = baseLocations.filter(loc => 
         isPointInPolygon([loc.lat, loc.lng], polygonFilter)
       );
     }
     return baseLocations;
-  }, [kajianQuery.data, filterState.filters, polygonFilter]);
+  }, [filterState.filters, polygonFilter]);
 
   const { status: scannerStatus, nearbyLocations, startScan, resetScanner } = useNearbyKajian(filteredLocations);
   const totalKajian = filteredLocations.reduce((sum, l) => sum + l.kajianList.length, 0);
   const selectedLocation = filteredLocations.find((l) => l.id === selectedLocationId) ?? null;
-  const resultsSummary = kajianQuery.isLoading
-    ? "Memuat jadwal kajian…"
-    : kajianQuery.isError
-    ? "Gagal memuat data. Periksa koneksi lalu coba lagi."
-    : filteredLocations.length > 0
+  const resultsSummary = filteredLocations.length > 0
     ? `${totalKajian} kajian ditemukan di ${filteredLocations.length} lokasi`
-    : "Tidak ada kajian yang cocok dengan filter.";
-  useEffect(() => {
-    geo.requestLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    : null;
+    
+  const locationsToDisplay = (showScanner && scannerStatus === "found") 
+    ? nearbyLocations 
+    : filteredLocations;
+  
+  useEffect(() => { geo.requestLocation(); }, []);
   useEffect(() => { if (geo.status === "granted" && geo.position) setFlyToSignal((s) => s + 1); }, [geo.status, geo.position]);
 
   function handleLocateMe() {
@@ -288,6 +290,7 @@ export default function PublicMapPage() {
 
   function handleTriggerSearch() {
     setShowScanner(true);
+    setIsScannerBoxOpen(true);
     startScan();
   }
 
@@ -316,7 +319,13 @@ export default function PublicMapPage() {
             <span className="hidden md:inline">Masuk Admin</span>
           </Button>
         </Link>
-        <Button size="icon" variant="ghost" className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/40 text-blue-900 shadow-sm backdrop-blur-md hover:bg-white transition-colors">
+        <Button 
+          size="icon" 
+          variant="ghost"
+          onClick={() => {
+            window.dispatchEvent(new Event("resetHomePage"));
+          }} 
+          className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/40 text-blue-900 shadow-sm backdrop-blur-md hover:bg-white transition-colors">
           <Home className="h-6 w-6 md:h-7 md:w-7" />
         </Button>
       </div>
@@ -324,7 +333,9 @@ export default function PublicMapPage() {
       {/* Peta Utama */}
       <div className="absolute inset-0 z-0">
         <MapView
-          locations={filteredLocations}
+          locations={locationsToDisplay}
+          isScannerActive={showScanner && scannerStatus === "found"}
+          nearestLocationId={showScanner && scannerStatus === "found" && nearbyLocations.length > 0 ? nearbyLocations[0].id : null}
           selectedLocationId={selectedLocationId}
           onMarkerClick={handleMarkerClick}
           onOpenDetail={() => setDrawerOpen(true)}
@@ -370,7 +381,7 @@ export default function PublicMapPage() {
               </Button>
             </div>
           ) : (
-            <KajianList locations={filteredLocations} onSelectLocation={(id) => { handleMarkerClick(id); setDrawerOpen(true); if (window.innerWidth < 768) setIsListOpen(false); }} />
+            <KajianList locations={locationsToDisplay} onSelectLocation={(id) => { handleMarkerClick(id); setDrawerOpen(true); if (window.innerWidth < 768) setIsListOpen(false); }} />
           )}
         </div>
       </div>
@@ -458,14 +469,24 @@ export default function PublicMapPage() {
       )}
 
       <MapToolbar
-        onSearch={() => {
-          handleTriggerSearch();
-          // Tutup menu lain saat mencari
-          setIsListOpen(false);
-          setIsLayerMenuOpen(false);
-        }} 
+        showScanner={showScanner}
+         onSearch={() => {
+          if (showScanner) {
+            setShowScanner(false);
+            setIsScannerBoxOpen(false);
+            resetScanner();
+          } else {
+            handleTriggerSearch();
+            setIsListOpen(false);
+            setIsLayerMenuOpen(false);
+            setIsDrawingMode(false);
+          }
+        }}  
         onToggleList={() => {
           setIsListOpen(!isListOpen);
+          setShowScanner(false); 
+          setIsScannerBoxOpen(false);
+          resetScanner();
           setIsLayerMenuOpen(false); 
           setIsDrawingMode(false);
         }} 
@@ -475,7 +496,9 @@ export default function PublicMapPage() {
         onToggleDraw={() => {
           setIsDrawingMode(!isDrawingMode);
           setIsListOpen(false);       
-          setIsLayerMenuOpen(false);  
+          setIsLayerMenuOpen(false); 
+          //setShowScanner(false);
+          setIsScannerBoxOpen(false);
         }}
         onClearDraw={() => {
           setPolygonFilter(null);
@@ -484,14 +507,15 @@ export default function PublicMapPage() {
         onToggleLayerMenu={() => {
           setIsLayerMenuOpen(!isLayerMenuOpen);
           setIsListOpen(false);       
-          setIsDrawingMode(false);    
+          setIsDrawingMode(false); 
+          setShowScanner(false);
+          setIsScannerBoxOpen(false);
         }}
         isListOpen={isListOpen}
         isLayerMenuOpen={isLayerMenuOpen}
         isRouteMode={isRouteMode}
       />
 
-      {/* Sisa UI Kontrol Kanan & Scanner ... */}
       <RightSideControls 
         onLocate={handleLocateMe} 
         locateLoading={geo.status === "loading"} 
@@ -504,7 +528,7 @@ export default function PublicMapPage() {
           setIsListOpen(false);      
           setIsLayerMenuOpen(false);  
         }} 
-        isDisabled={isAnyOtherFeatureActive}
+        isDisabled={isListOpen || isDrawingMode || isLayerMenuOpen}
       />
 
       {(geo.status === "denied" || geo.status === "error") && !locateErrorDismissed && (
@@ -516,7 +540,7 @@ export default function PublicMapPage() {
       
       <KajianDetailDrawer location={selectedLocation} open={drawerOpen} onOpenChange={setDrawerOpen} />
       
-      {showScanner && (
+      {showScanner && isScannerBoxOpen && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
           <NearbyScannerAlert 
             status={scannerStatus} 
@@ -524,19 +548,17 @@ export default function PublicMapPage() {
             onShowDetail={(id: string) => { 
               handleMarkerClick(id); 
               setDrawerOpen(true); 
-              setShowScanner(false); 
-              resetScanner(); 
+              setIsScannerBoxOpen(false);
               }}
               onClose={() => { 
-                setShowScanner(false); 
-                resetScanner(); 
+                setIsScannerBoxOpen(false);
               }}
               />
         </div>
       )}
 
       {polygonFilter && filteredLocations.length === 0 && !isListOpen && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex w-[85vw] max-w-[320px] flex-col items-center justify-center gap-1 rounded-2xl border border-white/20 bg-black/75 p-5 text-center text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-300">
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex w-[85vw] max-w-[320px] flex-col items-center justify-center gap-1 rounded-2xl border border-white/20 bg-black/65 p-5 text-center text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-300">
           <X className="mb-1 h-8 w-8 text-red-400" />
           <p className="text-[15px] font-bold">Area Kosong</p>
           <p className="text-xs text-slate-300">Maaf, tidak ada titik kajian di dalam area yang Anda gambar.</p>

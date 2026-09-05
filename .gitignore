@@ -1,14 +1,8 @@
 node_modules
 .next
-.env
-.env*.local
-.cursor
 out
-generated
+.env*.local
 .DS_Store
 *.pem
 npm-debug.log*
 next-env.d.ts
-
-**/*.old*
-

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   Marker,
@@ -10,6 +10,7 @@ import {
   useMapEvents,
   Polygon,
   Polyline,
+  Circle
 } from "react-leaflet";
 
 import L from "leaflet";
@@ -80,6 +81,7 @@ function AutoMosqueImage({ mosqueName }: { mosqueName: string }) {
 
 function PolygonDrawHandler({ isDrawingMode, onPolygonCreated }: { isDrawingMode?: boolean; onPolygonCreated?: (coords: [number, number][]) => void }) {
   const [points, setPoints] = useState<[number, number][]>([]);
+  const [cursorPosition, setCursorPosition] = useState<[number, number] | null>(null);
 
   const map = useMapEvents({
     click(e) {
@@ -91,8 +93,14 @@ function PolygonDrawHandler({ isDrawingMode, onPolygonCreated }: { isDrawingMode
       if (points.length >= 2) {
         const finalPoints: [number, number][] = [...points, [e.latlng.lat, e.latlng.lng]];
         onPolygonCreated(finalPoints);
-        setPoints([]); 
+        setPoints([]);
+        setCursorPosition(null); 
       }
+    },
+    mousemove(e) {
+      // Hanya lacak mouse jika mode gambar aktif dan sudah ada minimal 1 titik yang diklik
+      if (!isDrawingMode || points.length === 0) return;
+      setCursorPosition([e.latlng.lat, e.latlng.lng]);
     }
   });
 
@@ -111,6 +119,8 @@ function PolygonDrawHandler({ isDrawingMode, onPolygonCreated }: { isDrawingMode
 
   if (!isDrawingMode || points.length === 0) return null;
 
+  const displayPoints = cursorPosition ? [...points, cursorPosition] : points;
+
   return (
     <>
       {points.length < 3 ? (
@@ -118,11 +128,16 @@ function PolygonDrawHandler({ isDrawingMode, onPolygonCreated }: { isDrawingMode
       ) : (
         <Polygon positions={points} color="#3b82f6" fillColor="#3b82f6" fillOpacity={0.2} interactive={false} />
       )}
+      {displayPoints.length < 3 ? (
+        <Polyline positions={displayPoints} color="#3b82f6" dashArray="5, 10" />
+      ) : (
+        <Polygon positions={displayPoints} color="#3b82f6" fillColor="#3b82f6" fillOpacity={0.2} interactive={false} />
+      )}
     </>
   );
 }
 
-//  KOMPONEN PENGGAMBAR RUTE  
+// KOMPONEN PENGGAMBAR RUTE
 function RoutingHandler({ 
   isRouteMode, 
   userPosition, 
@@ -140,14 +155,11 @@ function RoutingHandler({
   const routingControlRef = useRef<any>(null);
 
   useEffect(() => {
-    // 1. Bersihkan rute jika mode dimatikan atau data posisi/tujuan tidak lengkap
     if (!isRouteMode || !userPosition || !targetLocation) {
       if (routingControlRef.current) {
         try {
           map.removeControl(routingControlRef.current);
-        } catch (e) {
-          // Abaikan error saat penghapusan
-        }
+        } catch (e) {}
         routingControlRef.current = null;
       }
       if (onRouteCleared) onRouteCleared();
@@ -161,7 +173,6 @@ function RoutingHandler({
 
     if (!L.Routing) return;
 
-    // 2. Hapus kontrol lama jika ada sebelum membuat kontrol baru
     if (routingControlRef.current) {
       try {
         map.removeControl(routingControlRef.current);
@@ -169,7 +180,6 @@ function RoutingHandler({
       routingControlRef.current = null;
     }
 
-    // 3. Buat kontrol rute baru
     const routingControl = L.Routing.control({
       waypoints: [
         L.latLng(userPosition.lat, userPosition.lng),
@@ -178,7 +188,7 @@ function RoutingHandler({
       routeWhileDragging: false,
       showAlternatives: false,
       fitSelectedRoutes: true, 
-      show: false, // Sembunyikan UI tabel bawaan OSRM
+      show: false, 
       lineOptions: {
         styles: [{ color: "#3b82f6", weight: 6, opacity: 0.85 }], 
         extendToWaypoints: true,
@@ -191,7 +201,6 @@ function RoutingHandler({
 
     routingControlRef.current = routingControl;
 
-    // 4. Tangkap event ketika rute berhasil ditemukan
     routingControl.on("routesfound", (e: any) => {
       const routes = e.routes;
       if (routes && routes[0]) {
@@ -205,23 +214,18 @@ function RoutingHandler({
       }
     });
 
-    //  5. TANGKAP ERROR NETWORK / OSRM AGAR TIDAK CRASH DI NEXT.JS 
     routingControl.on("routingerror", (e: any) => {
       console.warn("OSRM Server warning / Rate limit:", e);
     });
 
-    // 6. Cleanup saat unmount atau re-render
     return () => {
       if (routingControlRef.current) {
         try {
           map.removeControl(routingControlRef.current);
-        } catch (e) {
-          // Abaikan error cleanup saat map unmounting
-        }
+        } catch (e) {}
         routingControlRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, isRouteMode, userPosition, targetLocation]);
 
   return null;
@@ -242,8 +246,8 @@ interface LeafletMapProps {
   onPolygonCreated?: (coords: [number, number][]) => void;
   mapStyle?: "default" | "satellite" | "dark";
   isRouteMode?: boolean;
-  
-
+  isScannerActive?: boolean;
+  nearestLocationId?: string | null;
   onRouteCalculated?: (data: { distanceKm: string; timeMins: number }) => void;
   onRouteCleared?: () => void;
 }
@@ -302,22 +306,34 @@ export default function LeafletMap({
   onPolygonCreated,
   mapStyle = "default",
   isRouteMode,
-  
-
   onRouteCalculated,
-  onRouteCleared
+  onRouteCleared,
+  isScannerActive,
+  nearestLocationId
 }: LeafletMapProps) {
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
+  // --- SOLUSI POPUP AMAN ---
+  // Jeda 400ms memastikan peta selesai bergeser sebelum memaksa buka popup
   useEffect(() => {
     if (selectedLocationId && markerRefs.current[selectedLocationId]) {
-      markerRefs.current[selectedLocationId]?.openPopup();
+      const marker = markerRefs.current[selectedLocationId];
+      if (marker && !marker.isPopupOpen()) {
+        const timer = setTimeout(() => {
+          if (markerRefs.current[selectedLocationId]) {
+            marker.openPopup();
+          }
+        }, 400); 
+        return () => clearTimeout(timer);
+      }
     }
   }, [selectedLocationId]);
 
   const currentTile = MAP_TILES[mapStyle] || MAP_TILES.default;
   const targetLocation = locations.find(loc => loc.id === selectedLocationId) || null;
-  
+  const nearestLoc = locations.find(loc => loc.id === nearestLocationId) || null;
+  const showPulse = nearestLoc && nearestLoc.id !== selectedLocationId;
+
   return (
     <MapContainer
       center={DEFAULT_MAP_CENTER}
@@ -330,6 +346,7 @@ export default function LeafletMap({
         key={mapStyle} 
         attribution={currentTile.attribution}
         url={currentTile.url}
+        maxZoom={mapStyle === "dark" ? 16 : 20}
       />
 
       <MapController 
@@ -344,6 +361,41 @@ export default function LeafletMap({
         isDrawingMode={isDrawingMode} 
         onPolygonCreated={onPolygonCreated} 
       />
+
+
+      {isScannerActive && userPosition && (
+        <>
+          {/* LAPIS 1: Pendaran Glow & Isian Biru (Efek Cahaya Radar) */}
+          <Circle
+            center={[userPosition.lat, userPosition.lng]}
+            radius={10000} 
+            pathOptions={{
+              color: "#3B82F6",       // Warna pendaran (Biru)
+              fillColor: "#0ea5e9",   // Isian area (Cyan / Biru Muda)
+              fillOpacity: 0.15,      // Transparansi isian agar peta tetap terlihat
+              opacity: 0.4,           // Transparansi garis glow
+              weight: 18,             // Sangat tebal agar "meluber" ke dalam dan luar batas
+              className: "transition-all duration-1000 ease-in-out animate-pulse" // Efek berdenyut halus
+            }}
+            interactive={false} 
+          />
+
+          {/* LAPIS 2: Garis Batas Utama (Hijau Tajam & Solid) */}
+          <Circle
+            center={[userPosition.lat, userPosition.lng]}
+            radius={10000} 
+            pathOptions={{
+              color: "#059669",         // Garis tepi Emerald (Hijau Gelap)
+              fillColor: "transparent", // Sengaja dibiarkan kosong agar isian biru di lapis 1 menembus
+              opacity: 1,               // Warna garis solid (100%)
+              weight: 3,                // Garis tajam (tipis)
+              className: "transition-all duration-1000 ease-in-out"
+            }}
+            interactive={false} 
+          />
+        </>
+      )}
+      
 
       <RoutingHandler 
         isRouteMode={isRouteMode}
@@ -369,6 +421,53 @@ export default function LeafletMap({
         />
       )}
 
+
+      {nearestLoc && isScannerActive && (
+        <Marker
+          key="pulse-standalone"
+          position={[nearestLoc.lat, nearestLoc.lng]}
+          interactive={false} 
+          zIndexOffset={900} 
+          icon={L.divIcon({
+            className: "bg-transparent overflow-visible",
+            html: `
+              <div class="relative flex flex-col items-center justify-center">  
+                <div class="absolute -top-20 flex animate-bounce flex-col items-center z-10">
+                  <div class="relative flex items-center gap-3 rounded-2xl bg-white/85 backdrop-blur-md p-1.5 pr-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200/50">
+                    
+                    <!-- Ikon Kiri (Timbul) -->
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-sm ring-2 ring-white/80">
+                      <span class="text-white text-sm">📚</span>
+                    </div>
+                    
+                    <!-- Teks -->
+                    <div class="flex flex-col justify-center">
+                      <span class="mb-0.5 text-[11px] font-extrabold tracking-tight text-slate-800 leading-none">
+                        TAFADDHOL, MAJELIS ILMU
+                      </span>
+                      <span class="text-[9.5px] font-medium text-slate-500 leading-none">
+                        Mari merapat, thalabul 'ilmi
+                      </span>
+                    </div>
+                    
+                  </div>
+                  
+                  <!-- Panah Bawah Menyatu -->
+                  <div class="-mt-[1px] h-3.5 w-3.5 rotate-45 border-b border-r border-slate-200/50 bg-white/85 backdrop-blur-md"></div>
+                </div>
+                
+                <!-- Efek Radar Kuning -->
+                <div class="h-14 w-14 rounded-full bg-yellow-500/70 animate-ping"></div>
+                
+              </div>
+            `,
+            iconSize: [56, 56],  
+            iconAnchor: [33, 48] // Titik tumpu disejajarkan dengan posisi masjid
+          })}
+        />
+      )}
+    
+
       {locations.map((location) => (
         <Marker
           key={location.id}
@@ -376,14 +475,16 @@ export default function LeafletMap({
           icon={createKajianIcon({
             hasToday: location.hasToday,
             isSelected: location.id === selectedLocationId,
+            isNearby: isScannerActive
           })}
           eventHandlers={{ click: () => onMarkerClick(location.id) }}
           ref={(ref) => {
             markerRefs.current[location.id] = ref;
           }}
         >
-          <Popup className="kajianmap-popup " closeButton={true} offset={[0, -4]}>
-            <div className="w-56 p-3.5 ">
+          <Popup className="kajianmap-popup" closeButton={true} offset={[0, -4]}>
+            {/* INI KUNCI ANTI-GEPENG: Memaksa Leaflet membaca minimal lebar 224px dan tinggi 160px */}
+            <div className="w-56 p-3.5" style={{ minWidth: "224px", minHeight: "160px" }}>
               <div className="mb-1.5 flex items-start justify-between gap-2">
                 <p className="font-display text-sm font-semibold leading-snug text-slate-900">{location.name}</p>
                 {location.hasToday && <Badge variant="today" className="shrink-0">Hari ini</Badge>}
