@@ -1,5 +1,5 @@
 "use client";;
-import { use } from "react";
+import { Suspense, use } from "react";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,7 +8,7 @@ import { mockKajian, mockLocations } from "@/lib/mock-data";
 import { occursToday, scheduleWithTimeLabel } from "@/lib/date-helpers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar, NavbarLoader } from "@/components/layout/Navbar";
 import { useKajianDetailQuery } from "@/hooks/queries/useKajian";
 
 interface KajianDetailPageProps {
@@ -33,7 +33,9 @@ export default function KajianDetailPage(props: KajianDetailPageProps) {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto scroll-slim">
-      <Navbar />
+      <Suspense fallback={<NavbarLoader />}>
+        <Navbar />
+      </Suspense>
       <div className="mx-auto w-full max-w-2xl p-5 sm:p-8">
         <Link
           href="/"
