@@ -23,7 +23,7 @@ export const AuthHandler = {
 
   async me(req: NextRequest) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const user = await AuthService.me(auth);
       return ApiResponse.success(user);
     } catch (err) {

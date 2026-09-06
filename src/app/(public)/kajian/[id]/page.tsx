@@ -1,4 +1,5 @@
-"use client";
+"use client";;
+import { Suspense, use } from "react";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,18 +8,19 @@ import { mockKajian, mockLocations } from "@/lib/mock-data";
 import { occursToday, scheduleWithTimeLabel } from "@/lib/date-helpers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar, NavbarLoader } from "@/components/layout/Navbar";
 import { useKajianDetailQuery } from "@/hooks/queries/useKajian";
 
 interface KajianDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // export function generateStaticParams() {
 //   return mockKajian.map((k) => ({ id: k.id }));
 // }
 
-export default function KajianDetailPage({ params }: KajianDetailPageProps) {
+export default function KajianDetailPage(props: KajianDetailPageProps) {
+  const params = use(props.params);
   const { data, isLoading, isError } = useKajianDetailQuery(params.id);
   const kajian = mockKajian.find((k) => k.id === params.id);
   if (!kajian) notFound();
@@ -31,7 +33,9 @@ export default function KajianDetailPage({ params }: KajianDetailPageProps) {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto scroll-slim">
-      <Navbar />
+      <Suspense fallback={<NavbarLoader />}>
+        <Navbar />
+      </Suspense>
       <div className="mx-auto w-full max-w-2xl p-5 sm:p-8">
         <Link
           href="/"

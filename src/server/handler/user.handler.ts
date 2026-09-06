@@ -11,7 +11,7 @@ import { requireAuth } from "@/server/middlewares/auth.middleware";
 export const UserHandler = {
   async getAllUsers(req: NextRequest) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const { searchParams } = new URL(req.url);
       const role = searchParams.get("role");
       const data = await UserService.list(
@@ -29,7 +29,7 @@ export const UserHandler = {
 
   async createUser(req: NextRequest) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const body = await req.json();
       const data = await UserService.create(body, auth);
       return ApiResponse.created(data, "Akun admin berhasil dibuat.");
@@ -40,7 +40,7 @@ export const UserHandler = {
 
   async getUserById(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const data = await UserService.getById(id, auth);
       return ApiResponse.success(data);
     } catch (err) {
@@ -50,7 +50,7 @@ export const UserHandler = {
 
   async updateUser(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const body = await req.json();
       const data = await UserService.update(id, body, auth);
       return ApiResponse.success(data, "Akun admin berhasil diperbarui.");
@@ -61,7 +61,7 @@ export const UserHandler = {
 
   async deleteUser(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       await UserService.remove(id, auth);
       return ApiResponse.success(null, "Akun admin berhasil dihapus.");
     } catch (err) {
