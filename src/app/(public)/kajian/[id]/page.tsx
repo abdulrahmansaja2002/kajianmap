@@ -1,4 +1,5 @@
-"use client";
+"use client";;
+import { use } from "react";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,14 +12,15 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useKajianDetailQuery } from "@/hooks/queries/useKajian";
 
 interface KajianDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // export function generateStaticParams() {
 //   return mockKajian.map((k) => ({ id: k.id }));
 // }
 
-export default function KajianDetailPage({ params }: KajianDetailPageProps) {
+export default function KajianDetailPage(props: KajianDetailPageProps) {
+  const params = use(props.params);
   const { data, isLoading, isError } = useKajianDetailQuery(params.id);
   const kajian = mockKajian.find((k) => k.id === params.id);
   if (!kajian) notFound();
