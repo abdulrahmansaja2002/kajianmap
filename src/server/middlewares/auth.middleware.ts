@@ -3,6 +3,7 @@ import type { Role } from "../../../generated/prisma/client";
 import { verifyJwt } from "@/server/helpers/jwt";
 import { ForbiddenError, UnauthorizedError } from "@/server/helpers/errors";
 import { AUTH_COOKIE_NAME } from "@/server/helpers/cookie";
+import { cookies } from "next/headers";
 
 export interface AuthContext {
   userId: string;
@@ -22,8 +23,9 @@ export interface AuthContext {
  * `POST /api/auth/login` route that signs one isn't part of this pass; wire
  * it up via `signJwt` from `helpers/jwt.ts` once `auth.service.ts` exists.
  */
-export function getAuthContext(req: NextRequest): AuthContext | null {
-  const cookieToken = req.cookies.get(AUTH_COOKIE_NAME)?.value;
+export async function getAuthContext(req: NextRequest): Promise<AuthContext | null> {
+  const cookieStore = await cookies();
+  const cookieToken = cookieStore.get(AUTH_COOKIE_NAME)?.value;
   const headerToken = req.headers.get("authorization")?.startsWith("Bearer ")
     ? req.headers.get("authorization")!.slice("Bearer ".length).trim()
     : undefined;
@@ -40,8 +42,8 @@ export function getAuthContext(req: NextRequest): AuthContext | null {
 /** Same as `getAuthContext`, but throws `UnauthorizedError` instead of
  *  returning null — the ergonomic choice for handlers guarding a route
  *  that requires *some* authenticated user, regardless of role. */
-export function requireAuth(req: NextRequest): AuthContext {
-  const ctx = getAuthContext(req);
+export async function requireAuth(req: NextRequest): Promise<AuthContext> {
+  const ctx = await getAuthContext(req);
   if (!ctx) {
     throw new UnauthorizedError("Token tidak valid, kedaluwarsa, atau belum login.");
   }

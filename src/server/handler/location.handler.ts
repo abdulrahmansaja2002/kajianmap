@@ -24,7 +24,7 @@ export const LocationHandler = {
 
   async createLocation(req: NextRequest) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const body = await req.json();
       const data = await LocationService.create(body, auth);
       return ApiResponse.created(data, "Lokasi berhasil dibuat.");
@@ -44,7 +44,7 @@ export const LocationHandler = {
 
   async updateLocation(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const body = await req.json();
       const data = await LocationService.update(id, body, auth);
       return ApiResponse.success(data, "Lokasi berhasil diperbarui.");
@@ -55,7 +55,7 @@ export const LocationHandler = {
 
   async deleteLocation(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       await LocationService.remove(id, auth);
       return ApiResponse.success(null, "Lokasi berhasil dihapus.");
     } catch (err) {

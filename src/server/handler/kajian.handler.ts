@@ -26,7 +26,7 @@ export const KajianHandler = {
 
   async createKajian(req: NextRequest) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const body = await req.json();
       const data = await KajianService.create(body, auth);
       return ApiResponse.created(data, "Jadwal kajian berhasil dibuat.");
@@ -46,7 +46,7 @@ export const KajianHandler = {
 
   async updateKajian(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       const body = await req.json();
       const data = await KajianService.update(id, body, auth);
       return ApiResponse.success(data, "Jadwal kajian berhasil diperbarui.");
@@ -57,7 +57,7 @@ export const KajianHandler = {
 
   async deleteKajian(req: NextRequest, id: string) {
     try {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       await KajianService.remove(id, auth);
       return ApiResponse.success(null, "Jadwal kajian berhasil dihapus.");
     } catch (err) {
