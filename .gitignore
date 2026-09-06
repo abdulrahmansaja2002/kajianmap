@@ -12,3 +12,5 @@ next-env.d.ts
 
 **/*.old*
 
+# next-agents-md
+.next-docs/
